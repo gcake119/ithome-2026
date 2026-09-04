@@ -5,7 +5,7 @@
     "type": "ithome-ironman",
     "totalDays": 30,
     "account": "gcake119",
-    "seriesTitle": "我的 iThome 鐵人賽系列",
+    "seriesTitle": "系列標題",
     "contestTag": "18th鐵人賽",
     "contest": "18th-ironman-2026",
     "repository": "gcake119/ithome-2026",
@@ -14,28 +14,28 @@
     "schedule": []
   },
   "site": {
-    "tagline": "一份陪你完成三十天挑戰的學習誌",
+    "tagline": "系列副標題",
     "home": {
-      "kicker": "從第一天開始，建立自己的學習路線",
-      "lead": "每天完成一個主題，也保留回頭整理與延伸探索的空間。",
-      "summary": "這裡收錄完整的三十天鐵人賽文章，並在賽後持續補充心得與實作筆記。"
+      "kicker": "系列主題標語",
+      "lead": "系列簡介",
+      "summary": "在這裡說明系列主題、適合的讀者，以及讀完後可以學到什麼。"
     }
   },
   "learningMap": {
-    "title": "三十天學習地圖",
-    "description": "依照自己的速度，從基礎一路走到回顧與整合。",
-    "sectionHeading": "先看懂這趟路怎麼走",
+    "title": "學習地圖標題",
+    "description": "在這裡說明學習地圖的安排與建議閱讀順序。",
+    "sectionHeading": "學習階段總覽",
     "sectionLabel": "階段",
     "sections": [
-      { "id": "foundation", "title": "建立基礎", "description": "先理解題目、工具與合作方式。" },
-      { "id": "practice", "title": "開始實作", "description": "把觀念帶進可驗證的小型任務。" },
-      { "id": "reflection", "title": "整理與延伸", "description": "回顧做法，建立可以繼續使用的方法。" }
+      { "id": "foundation", "title": "第一階段標題", "description": "在這裡說明第一階段的學習重點與涵蓋內容。" },
+      { "id": "practice", "title": "第二階段標題", "description": "在這裡說明第二階段的學習重點與涵蓋內容。" },
+      { "id": "reflection", "title": "第三階段標題", "description": "在這裡說明第三階段的學習重點與涵蓋內容。" }
     ]
   },
   "extensions": {
     "enabled": true,
     "title": "延伸閱讀",
-    "description": "鐵人賽以外的心得、補充與後續實作。"
+    "description": "在這裡介紹主系列以外的補充文章與延伸內容。"
   },
   "brand": {
     "mark": {
