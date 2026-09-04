@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 2,
+  "initialized": false,
+  "publication": {
+    "type": "ithome-ironman",
+    "totalDays": 30,
+    "account": "YOUR_ITHOME_NAME",
+    "seriesTitle": "系列標題",
+    "contestTag": "18th鐵人賽",
+    "contest": "18th-ironman-2026",
+    "repository": "your-github-name/your-repo",
+    "seriesKey": "your-series",
+    "day1Date": null,
+    "schedule": []
+  },
+  "site": {
+    "tagline": "系列副標題",
+    "home": {
+      "kicker": "系列主題標語",
+      "lead": "系列簡介",
+      "summary": "在這裡說明系列主題、適合的讀者，以及讀完後可以學到什麼。"
+    }
+  },
+  "learningMap": {
+    "title": "學習地圖標題",
+    "description": "在這裡說明學習地圖的安排與建議閱讀順序。",
+    "sectionHeading": "學習階段總覽",
+    "sectionLabel": "階段",
+    "sections": [
+      {
+        "id": "foundation",
+        "title": "第一階段標題",
+        "description": "在這裡說明第一階段的學習重點與涵蓋內容。"
+      },
+      {
+        "id": "practice",
+        "title": "第二階段標題",
+        "description": "在這裡說明第二階段的學習重點與涵蓋內容。"
+      },
+      {
+        "id": "reflection",
+        "title": "第三階段標題",
+        "description": "在這裡說明第三階段的學習重點與涵蓋內容。"
+      }
+    ]
+  },
+  "extensions": {
+    "enabled": true,
+    "title": "延伸閱讀",
+    "description": "在這裡介紹主系列以外的補充文章與延伸內容。"
+  },
+  "brand": {
+    "mark": {
+      "light": "assets/ai-collaboration-mark.png",
+      "dark": "assets/ai-collaboration-mark-dark.png",
+      "alt": "iThome 鐵人賽系列標誌"
+    },
+    "favicon": "favicon.png",
+    "appleTouchIcon": "apple-touch-icon.png"
+  },
+  "githubPages": {
+    "site": "https://your-github-name.github.io",
+    "base": "/your-repo",
+    "publicUrl": "https://your-github-name.github.io/your-repo"
+  }
+}

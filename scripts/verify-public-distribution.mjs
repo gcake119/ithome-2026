@@ -11,7 +11,7 @@ const internal = (file) => file === '.spectra.yaml'
 const publicRoots = new Set(['.agents', '.github', 'public', 'scripts', 'src']);
 const publicFiles = new Set([
   '.gitignore', 'CONTRIBUTING.md', 'LICENSE', 'PRODUCT.md', 'README.md', 'SECURITY.md',
-  'astro.config.mjs', 'design-qa.md', 'ithome.config.json', 'package.json', 'pnpm-lock.yaml',
+  'astro.config.mjs', 'design-qa.md', 'ithome.config.json', 'ithome.config.example.json', 'package.json', 'pnpm-lock.yaml',
   'pnpm-workspace.yaml', 'tsconfig.json',
 ]);
 const allowed = (file) => publicFiles.has(file) || publicRoots.has(file.split('/')[0]);
