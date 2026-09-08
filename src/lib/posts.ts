@@ -1,13 +1,14 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { loadProjectConfigSync } from '../../scripts/ithome/config.mjs';
 import { assertContentContract } from './content-contract';
+import { hasReachedPublishDate } from './publishing-date';
 
 export type IronmanPost = CollectionEntry<'ironman'>;
 export type ExtensionPost = CollectionEntry<'extensions'>;
 export type Post = IronmanPost;
 
 export function isPublished(post: IronmanPost | ExtensionPost, now = new Date()) {
-  return !post.data.draft && post.data.publishDate <= now;
+  return !post.data.draft && hasReachedPublishDate(post.data.publishDate, now);
 }
 
 export function validateContentIndex(ironman: IronmanPost[], extensions: ExtensionPost[], project = loadProjectConfigSync()) {
