@@ -74,6 +74,35 @@ describe('Playwright iThome browser driver', () => {
     expect(session).toMatchObject({ authenticated: false, antiAutomation: null });
   });
 
+  test('follows draft-list pagination until it finds the expected draft', async () => {
+    const page = fakePage('gcake119 18th鐵人賽');
+    page.evaluate = vi.fn(async (callback) => {
+      const source = String(callback);
+      if (source.includes('document.body')) return 'gcake119 18th鐵人賽';
+      if (page.goto.mock.calls.at(-1)?.[0]?.endsWith('?page=2')) {
+        return {
+          entries: [{
+            href: '/articles/day-2/draft',
+            title: 'Day 2｜當實作跑得比理解更快',
+            text: '草稿\nDay 2｜當實作跑得比理解更快',
+          }],
+          nextHref: null,
+        };
+      }
+      return { entries: [], nextHref: '/users/me/articles?page=2' };
+    });
+    const driver = createPlaywrightIthomeDriver({ chromiumImpl: fakeChromium(page), config });
+    await driver.connect();
+
+    const drafts = await driver.scanDrafts({ payload: { title: 'Day 2｜當實作跑得比理解更快' } });
+
+    expect(page.goto).toHaveBeenCalledWith(
+      'https://ithelp.ithome.com.tw/users/me/articles?page=2',
+      expect.any(Object),
+    );
+    expect(drafts).toHaveLength(1);
+  });
+
   test('reads the visible CodeMirror editor instead of an unrelated visible textarea', async () => {
     const page = fakePage('Software Development 18th鐵人賽 儲存草稿');
     page.locator = vi.fn((selector) => {

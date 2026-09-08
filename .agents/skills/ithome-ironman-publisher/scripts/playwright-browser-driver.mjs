@@ -127,15 +127,32 @@ export function createPlaywrightIthomeDriver({ chromiumImpl = chromium, config }
 
     async scanDrafts({ payload }) {
       const activePage = requirePage();
-      await navigate(activePage, draftsUrl);
-      const entries = await activePage.evaluate(() => {
-        const links = [...document.querySelectorAll('a[href*="/articles/"]')];
-        return links.map((link) => {
-          const container = link.closest('article, li, .list-group-item, .card, tr') || link.parentElement;
-          const text = container?.innerText || link.innerText || '';
-          return { href: link.getAttribute('href'), title: link.innerText.trim(), text };
+      const root = new URL(draftsUrl);
+      const seen = new Set();
+      const entries = [];
+      let pageUrl = root.toString();
+
+      while (pageUrl && !seen.has(pageUrl) && seen.size < 100) {
+        seen.add(pageUrl);
+        await navigate(activePage, pageUrl);
+        const snapshot = await activePage.evaluate(() => {
+          const links = [...document.querySelectorAll('a[href*="/articles/"]')];
+          const pageEntries = links.map((link) => {
+            const container = link.closest('article, li, .list-group-item, .card, tr') || link.parentElement;
+            const text = container?.innerText || link.innerText || '';
+            return { href: link.getAttribute('href'), title: link.innerText.trim(), text };
+          });
+          const next = document.querySelector('a[rel="next"]')
+            || [...document.querySelectorAll('a')].find((link) => /^(下一頁|next)$/i.test(link.textContent.trim()));
+          return { entries: pageEntries, nextHref: next?.getAttribute('href') || null };
         });
-      });
+        entries.push(...snapshot.entries);
+        if (!snapshot.nextHref) break;
+        const next = new URL(snapshot.nextHref, root);
+        if (next.origin !== root.origin || next.pathname !== root.pathname) throw reasonError('draft_pagination_invalid');
+        pageUrl = next.toString();
+      }
+
       return matchDraftEntries(entries, payload.title);
     },
 
