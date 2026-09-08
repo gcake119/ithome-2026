@@ -123,7 +123,6 @@ a:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 .series-mark__image--light { display: none; }
 .series-mark__image--dark { display: block; }
 .sidebar-brand strong { display: block; font-size: 1rem; font-weight: 800; line-height: 1.5; letter-spacing: -0.02em; }
-.mobile-brand-title,
 .mobile-series-context { display: none; }
 .sidebar-brand small { display: block; margin-top: 9px; color: var(--sidebar-muted); font-size: 0.75rem; line-height: 1.6; }
 
@@ -260,9 +259,8 @@ a:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
   .series-sidebar { position: relative; width: 100%; height: auto; overflow: visible; padding: 12px 20px 0; }
   .sidebar-brand { min-height: 46px; max-width: calc(100% - 58px); grid-template-columns: 42px minmax(0, 1fr); gap: 14px; align-items: center; }
   .sidebar-brand > span { min-width: 0; }
-  .sidebar-brand strong:not(.mobile-brand-title),
   .sidebar-brand small { display: none; }
-  .sidebar-brand .mobile-brand-title { display: block; overflow: hidden; font-size: 0.9375rem; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+  .sidebar-brand strong { overflow: hidden; font-size: 0.9375rem; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
   .series-mark { width: 42px; }
   .sidebar-heading { margin-top: 8px; padding: 0; border: 0; }
   .sidebar-heading h2,
