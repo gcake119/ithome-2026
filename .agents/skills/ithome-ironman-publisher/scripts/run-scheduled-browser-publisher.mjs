@@ -15,7 +15,7 @@ const taipeiDateFormatter = new Intl.DateTimeFormat('en-CA', {
 
 export function scheduledDayForDate(schedule, date) {
   const match = schedule.find((entry) => entry?.date === date);
-  return Number.isInteger(match?.day) && match.day >= 1 && match.day <= 30 ? match.day : null;
+  return Number.isInteger(match?.day) && match.day >= 2 && match.day <= 30 ? match.day : null;
 }
 
 export async function runScheduledBrowserPublisher({

@@ -10,6 +10,7 @@ const schedule = [
 
 describe('scheduled browser publisher', () => {
   test('selects only an explicit Day from the configured schedule', () => {
+    expect(scheduledDayForDate(schedule, '2026-09-09')).toBeNull();
     expect(scheduledDayForDate(schedule, '2026-09-10')).toBe(2);
     expect(scheduledDayForDate(schedule, '2026-10-09')).toBeNull();
   });
