@@ -16,6 +16,22 @@ const storageKey = `${publication.seriesKey}:last-read`;
     <aside class="series-sidebar">
       <a class="sidebar-brand" href={base} aria-current="page"><SeriesMark /><span><strong>{publication.seriesTitle}</strong><small>{site.tagline}</small></span></a>
       <div class="sidebar-heading"><h2><a href={base} aria-current="page">{learningMap.title}</a></h2><p>目前已公開 {publishedCount} 篇。{learningMap.description}</p></div>
+      <div class="mobile-series-context">
+        <span><strong>{publishedCount}</strong>／{publication.totalDays} 篇已公開</span>
+        <details class="mobile-series-directory">
+          <summary>文章列表</summary>
+          <nav aria-label={`手機版 ${publication.totalDays} 天系列文章`}>
+            {learningMap.sections.map((section, index) => {
+              const items = ironman.filter((item) => item.data.section === section.id);
+              return <section class="sidebar-part"><h3>{learningMap.sectionLabel} {index + 1} <span>｜</span> {section.title}</h3><ol>
+                {items.map((item) => <li class:list={[{ locked: !isPublished(item) }]}>
+                  {isPublished(item) ? <a href={`${base}${dayPath(item.data.day).slice(1)}`}><span class="day-chip">Day {String(item.data.day).padStart(2, '0')}</span><span class="sidebar-title">{item.data.title.replace(/^Day\s*\d+｜/, '')}</span><time>{item.data.publishDate.toLocaleDateString('zh-TW')}</time></a> : <div class="locked-row"><span class="day-chip">Day {String(item.data.day).padStart(2, '0')}</span><span class="sidebar-title">{item.data.title.replace(/^Day\s*\d+｜/, '')}</span></div>}
+                </li>)}
+              </ol></section>;
+            })}
+          </nav>
+        </details>
+      </div>
       <nav class="series-tree" aria-label={`${publication.totalDays} 天系列文章`}>
         {learningMap.sections.map((section, index) => {
           const items = ironman.filter((item) => item.data.section === section.id);
