@@ -1,4 +1,4 @@
-import { mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, realpathSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -28,7 +28,7 @@ describe('Hermes CLI entrypoint detection', () => {
         join(alias, 'watchdog.mjs'),
       )).toBe(true);
     } finally {
-      rmSync(alias);
+      unlinkSync(alias);
       rmSync(directory, { recursive: true });
     }
   });
