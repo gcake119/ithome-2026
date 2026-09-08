@@ -34,6 +34,11 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install
+      - name: Verify iThome publishing payloads
+        run: |
+          for day in $(seq 1 30); do
+            pnpm ithome:prepare -- --day "$day" --json > /dev/null
+          done
       - name: Build Astro site
         run: pnpm build
       - name: Configure Pages
