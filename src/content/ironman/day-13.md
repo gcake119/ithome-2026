@@ -2,7 +2,7 @@
 title: "Day 13｜聽他怎麼說，也看他怎麼做"
 day: 13
 section: "chapter-3"
-publishDate: 2026-09-27
+publishDate: 2026-09-21
 draft: false
 ---
 

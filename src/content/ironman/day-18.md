@@ -2,7 +2,7 @@
 title: "Day 18｜系統分工之後，怎麼讓不同部分一起工作"
 day: 18
 section: "chapter-3"
-publishDate: 2026-10-02
+publishDate: 2026-09-26
 draft: false
 ---
 

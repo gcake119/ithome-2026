@@ -2,7 +2,7 @@
 title: "Day 7｜一句「平常都這樣做」，後面藏了多少事情？"
 day: 7
 section: "chapter-2"
-publishDate: 2026-09-21
+publishDate: 2026-09-15
 draft: false
 ---
 

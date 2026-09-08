@@ -2,7 +2,7 @@
 title: "Day 25｜用測試約束 AI 改程式"
 day: 25
 section: "chapter-4"
-publishDate: 2026-10-09
+publishDate: 2026-10-03
 draft: false
 ---
 

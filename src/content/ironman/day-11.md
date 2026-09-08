@@ -2,7 +2,7 @@
 title: "Day 11｜看到 n8n 時，我以為找到做預約系統的方法了"
 day: 11
 section: "chapter-2"
-publishDate: 2026-09-25
+publishDate: 2026-09-19
 draft: false
 ---
 

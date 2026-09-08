@@ -2,7 +2,7 @@
 title: "Day 9｜系統知道怎麼做，不代表使用者就該這樣做"
 day: 9
 section: "chapter-2"
-publishDate: 2026-09-23
+publishDate: 2026-09-17
 draft: false
 ---
 

@@ -2,7 +2,7 @@
 title: "Day 8｜沒有告訴 AI 的事"
 day: 8
 section: "chapter-2"
-publishDate: 2026-09-22
+publishDate: 2026-09-16
 draft: false
 ---
 

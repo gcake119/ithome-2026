@@ -2,7 +2,7 @@
 title: "Day 15｜我開始能從工作流程看見產品應該如何被使用"
 day: 15
 section: "chapter-3"
-publishDate: 2026-09-29
+publishDate: 2026-09-23
 draft: false
 ---
 

@@ -2,7 +2,7 @@
 title: "Day 24｜我不逐行讀程式碼，那我要怎麼知道 AI 做對了？"
 day: 24
 section: "chapter-4"
-publishDate: 2026-10-08
+publishDate: 2026-10-02
 draft: false
 ---
 

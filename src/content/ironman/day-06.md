@@ -2,7 +2,7 @@
 title: "Day 6｜把反覆確認的工作交給系統之後"
 day: 6
 section: "chapter-2"
-publishDate: 2026-09-20
+publishDate: 2026-09-14
 draft: false
 ---
 

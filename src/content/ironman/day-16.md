@@ -2,7 +2,7 @@
 title: "Day 16｜以終為始：思考產品功能"
 day: 16
 section: "chapter-3"
-publishDate: 2026-09-30
+publishDate: 2026-09-24
 draft: false
 ---
 

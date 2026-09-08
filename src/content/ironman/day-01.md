@@ -2,7 +2,7 @@
 title: "Day 1｜做得出來，卻完全改不動"
 day: 1
 section: "chapter-1"
-publishDate: 2026-09-15
+publishDate: 2026-09-09
 draft: false
 ---
 

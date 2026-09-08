@@ -2,7 +2,7 @@
 title: "Day 3｜功能是從觀察和許願長出來的"
 day: 3
 section: "chapter-2"
-publishDate: 2026-09-17
+publishDate: 2026-09-11
 draft: false
 ---
 

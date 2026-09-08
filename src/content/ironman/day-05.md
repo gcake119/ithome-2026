@@ -2,7 +2,7 @@
 title: "Day 5｜做自己的系統，不代表什麼都要自己做"
 day: 5
 section: "chapter-2"
-publishDate: 2026-09-19
+publishDate: 2026-09-13
 draft: false
 ---
 

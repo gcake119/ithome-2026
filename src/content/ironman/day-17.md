@@ -2,7 +2,7 @@
 title: "Day 17｜從「這個功能怎麼做」開始看懂系統怎麼分工"
 day: 17
 section: "chapter-3"
-publishDate: 2026-10-01
+publishDate: 2026-09-25
 draft: false
 ---
 

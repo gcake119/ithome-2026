@@ -2,7 +2,7 @@
 title: "Day 29｜工作真的要做進系統，我現在知道要問什麼了"
 day: 29
 section: "chapter-5"
-publishDate: 2026-10-13
+publishDate: 2026-10-07
 draft: false
 ---
 

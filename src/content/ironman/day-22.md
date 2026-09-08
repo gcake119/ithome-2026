@@ -2,7 +2,7 @@
 title: "Day 22｜從理解工程概念，到形成自己的判斷"
 day: 22
 section: "chapter-4"
-publishDate: 2026-10-06
+publishDate: 2026-09-30
 draft: false
 ---
 

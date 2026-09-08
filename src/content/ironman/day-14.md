@@ -2,7 +2,7 @@
 title: "Day 14｜我開始能從工作流程看見系統需要做什麼"
 day: 14
 section: "chapter-3"
-publishDate: 2026-09-28
+publishDate: 2026-09-22
 draft: false
 ---
 

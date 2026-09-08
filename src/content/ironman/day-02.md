@@ -2,7 +2,7 @@
 title: "Day 2｜當實作跑得比理解更快"
 day: 2
 section: "chapter-1"
-publishDate: 2026-09-16
+publishDate: 2026-09-10
 draft: false
 ---
 

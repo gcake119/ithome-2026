@@ -2,7 +2,7 @@
 title: "Day 10｜我以為功能做完，產品就完成了"
 day: 10
 section: "chapter-2"
-publishDate: 2026-09-24
+publishDate: 2026-09-18
 draft: false
 ---
 

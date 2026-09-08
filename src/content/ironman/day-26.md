@@ -2,7 +2,7 @@
 title: "Day 26｜功能做對了，實作方式也對嗎？"
 day: 26
 section: "chapter-4"
-publishDate: 2026-10-10
+publishDate: 2026-10-04
 draft: false
 ---
 

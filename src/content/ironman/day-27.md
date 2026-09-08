@@ -2,7 +2,7 @@
 title: "Day 27｜主要流程走得通，還有哪些地方我沒驗到？"
 day: 27
 section: "chapter-4"
-publishDate: 2026-10-11
+publishDate: 2026-10-05
 draft: false
 ---
 

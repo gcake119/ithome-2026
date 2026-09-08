@@ -2,7 +2,7 @@
 title: "Day 4｜如果所有事情都能交給 LINE 機器人就好了"
 day: 4
 section: "chapter-2"
-publishDate: 2026-09-18
+publishDate: 2026-09-12
 draft: false
 ---
 

@@ -2,7 +2,7 @@
 title: "Day 19｜把「為什麼這樣決定」也留下來"
 day: 19
 section: "chapter-3"
-publishDate: 2026-10-03
+publishDate: 2026-09-27
 draft: false
 ---
 

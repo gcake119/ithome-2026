@@ -2,7 +2,7 @@
 title: "Day 23｜我已經能沿著系統思考，卻還不能沿著程式碼追問題"
 day: 23
 section: "chapter-4"
-publishDate: 2026-10-07
+publishDate: 2026-10-01
 draft: false
 ---
 

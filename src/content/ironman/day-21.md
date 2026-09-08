@@ -2,7 +2,7 @@
 title: "Day 21｜我幾乎不讀程式碼，那我是怎麼理解系統的？"
 day: 21
 section: "chapter-4"
-publishDate: 2026-10-05
+publishDate: 2026-09-29
 draft: false
 ---
 

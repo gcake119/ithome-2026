@@ -2,7 +2,7 @@
 title: "Day 30｜AI 都會寫程式了，Coding 到底要懂多深？"
 day: 30
 section: "chapter-5"
-publishDate: 2026-10-14
+publishDate: 2026-10-08
 draft: false
 ---
 

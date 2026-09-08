@@ -2,7 +2,7 @@
 title: "Day 28｜做產品之前，我現在會先看人怎麼工作"
 day: 28
 section: "chapter-5"
-publishDate: 2026-10-12
+publishDate: 2026-10-06
 draft: false
 ---
 
