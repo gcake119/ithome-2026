@@ -1,9 +1,13 @@
 import { existsSync } from 'node:fs';
 import { access, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import bundledConfig from '../../ithome.config.json' with { type: 'json' };
 
-export const REPO_ROOT = process.cwd();
+const moduleRepoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+export const REPO_ROOT = [moduleRepoRoot, process.cwd()].find((candidate) => (
+  existsSync(path.join(candidate, 'ithome.config.json')) && existsSync(path.join(candidate, 'public'))
+)) ?? moduleRepoRoot;
 export const CONFIG_PATH = path.join(REPO_ROOT, 'ithome.config.json');
 export const PUBLIC_DIR = path.join(REPO_ROOT, 'public');
 const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.svg', '.ico']);

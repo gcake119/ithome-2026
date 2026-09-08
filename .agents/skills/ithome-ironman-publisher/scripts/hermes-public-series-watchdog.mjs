@@ -33,7 +33,25 @@ function seriesMainContent(html) {
   return main.replace(/<(aside|nav|footer)\b[^>]*>[\s\S]*?<\/\1>/gi, '');
 }
 
+function rssArticleLinks(xml) {
+  const links = [];
+  for (const match of xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)) {
+    const item = match[1];
+    const rawTitle = item.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '';
+    const rawLink = item.match(/<link\b[^>]*>([\s\S]*?)<\/link>/i)?.[1] ?? '';
+    const title = text(rawTitle.replace(/^\s*<!\[CDATA\[([\s\S]*)\]\]>\s*$/, '$1'));
+    try {
+      const url = new URL(rawLink.replace(/^\s*<!\[CDATA\[([\s\S]*)\]\]>\s*$/, '$1').trim().replace(/&amp;/g, '&'));
+      if (url.protocol !== 'https:' || url.hostname !== 'ithelp.ithome.com.tw' || !/^\/articles\/[^/]+\/?$/.test(url.pathname)) continue;
+      url.search = ''; url.hash = '';
+      links.push({ url: url.href.replace(/\/$/, ''), title });
+    } catch {}
+  }
+  return links.reverse();
+}
+
 function articleLinks(html, seriesUrl) {
+  if (/<rss\b/i.test(html)) return rssArticleLinks(html);
   const content = seriesMainContent(html);
   if (content === null) return null;
   const links = [];
@@ -167,8 +185,15 @@ export async function fetchWithRetry(url, { fetchImpl = fetch, sleep = (millisec
 }
 
 export async function fetchLatestSeriesPage(seriesUrl, { fetchPage = fetchWithRetry } = {}) {
-  const firstHtml = await fetchPage(seriesUrl);
   const base = new URL(seriesUrl);
+  let firstHtml;
+  try {
+    firstHtml = await fetchPage(seriesUrl);
+  } catch (seriesError) {
+    const seriesId = base.pathname.match(/\/ironman\/([^/]+)\/?$/)?.[1];
+    if (!seriesId) throw seriesError;
+    return fetchPage(`${base.origin}/rss/series/${seriesId}`);
+  }
   const pages = [1];
   const hrefPattern = /\bhref\s*=\s*["']([^"']+)["']/gi;
   for (const match of firstHtml.matchAll(hrefPattern)) {

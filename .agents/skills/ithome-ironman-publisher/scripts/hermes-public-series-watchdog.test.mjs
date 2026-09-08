@@ -1,6 +1,16 @@
+import { execFile } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+
 import { describe, expect, test } from 'vitest';
 
 import { evaluatePublicSeries, fetchLatestSeriesPage, fetchWithRetry, publicationReminder } from './hermes-public-series-watchdog.mjs';
+
+const execFileAsync = promisify(execFile);
+const watchdogPath = fileURLToPath(new URL('./hermes-public-series-watchdog.mjs', import.meta.url));
 
 const expected = {
   day: 12,
@@ -29,6 +39,25 @@ const articleHtml = `
   </article>`;
 
 describe('Hermes public series watchdog', () => {
+  test('runs from outside the repository while resolving repository assets', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'Hermes watchdog-cwd-'));
+    const state = join(directory, 'public-watchdog-state.json');
+    writeFileSync(state, '{}\n');
+
+    try {
+      const { stdout } = await execFileAsync(process.execPath, [
+        watchdogPath,
+        '--mode', 'reminder',
+        '--state', state,
+        '--date', '2026-09-09',
+        '--dry-run',
+      ], { cwd: directory });
+      expect(JSON.parse(stdout)).toMatchObject({ status: 'reminder', day: 1, dryRun: true });
+    } finally {
+      rmSync(directory, { recursive: true });
+    }
+  });
+
   test('builds the unconditional morning reminder from the explicit schedule', () => {
     expect(publicationReminder({ day: 17, date: '2026-08-29' })).toEqual({
       kind: 'publication_reminder',
@@ -138,6 +167,38 @@ describe('Hermes public series watchdog', () => {
       'https://ithelp.ithome.com.tw/users/20065770/ironman/9031',
       'https://ithelp.ithome.com.tw/users/20065770/ironman/9031?page=3',
     ]);
+  });
+
+  test('falls back to the official series RSS when the series page is unavailable', async () => {
+    const rss = `<?xml version="1.0"?><rss><channel><item>
+      <title><![CDATA[Day 1｜做得出來，卻完全改不動]]></title>
+      <link>https://ithelp.ithome.com.tw/articles/10408681?sc=rss.iron</link>
+    </item></channel></rss>`;
+    const seen = [];
+    const content = await fetchLatestSeriesPage('https://ithelp.ithome.com.tw/users/20183873/ironman/9371', {
+      fetchPage: async (url) => {
+        seen.push(url);
+        if (url.includes('/users/')) throw new Error('HTTP 403');
+        return rss;
+      },
+    });
+
+    expect(seen).toEqual([
+      'https://ithelp.ithome.com.tw/users/20183873/ironman/9371',
+      'https://ithelp.ithome.com.tw/rss/series/9371',
+    ]);
+    expect(evaluatePublicSeries({
+      expected: {
+        day: 1,
+        date: '2026-09-09',
+        title: 'Day 1｜做得出來，卻完全改不動',
+        articleUrl: 'https://ithelp.ithome.com.tw/articles/10408681',
+        canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/01/',
+      },
+      bootstrap: { seriesUrl: 'https://ithelp.ithome.com.tw/users/20183873/ironman/9371', seriesId: '9371' },
+      seriesHtml: content,
+      articleHtml: '<time>2026-09-09</time><a href="https://gcake119.github.io/ithome-2026/day/01/">個人連載網站</a>',
+    })).toMatchObject({ status: 'verified', notifications: [] });
   });
 
   test('retries a failed public read at most twice before succeeding', async () => {

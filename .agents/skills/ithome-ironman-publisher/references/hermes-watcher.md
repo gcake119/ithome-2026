@@ -49,7 +49,7 @@ Scheduling, Telegram relay, service-account filesystem verification, and the pub
 - `--mode reminder` emits one unconditional 09:00 reminder for the scheduled Day.
 - `--mode check --checkpoint public-1900` performs the 19:00 check.
 - `--mode check --checkpoint public-2230` performs the independent 22:30 check.
-- A check reads the verified publish event, follows the verified public series page to its highest pagination page, requires the expected article to be the final entry with the exact title, then fetches that public article and requires the scheduled publication date and exact canonical URL.
+- A check reads the verified publish event and follows the verified public series page to its highest pagination page. If the public series page is unavailable, it falls back to the official series RSS. It requires the expected article to be the latest entry with the exact title, then fetches that public article and requires the scheduled publication date and exact canonical URL.
 - Article discovery is limited to the page's `<main>` content and excludes nested navigation, sidebar, and footer regions. If a recognizable main content region is absent, the check reports the page as unreadable instead of scanning every article link and guessing.
 - Each public fetch tries once and retries at most twice, waiting two minutes between attempts. Only exhausted read failures produce `public_watchdog_unavailable`; they are never reported as an unpublished article.
 - A verified result is silent. Missing, non-latest, title-mismatched, canonical-mismatched, or missing verified publish evidence produces a publication reminder.
