@@ -2,6 +2,8 @@
 
 import { readFileSync } from 'node:fs';
 
+import { isDirectExecution } from './cli-entrypoint.mjs';
+
 function day(value) {
   return `Day ${String(value).padStart(2, '0')}`;
 }
@@ -29,7 +31,7 @@ export function formatNotifications(notifications) {
   return notifications.map(formatOne).join('\n');
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isDirectExecution(import.meta.url, process.argv[1])) {
   try {
     const result = JSON.parse(readFileSync(0, 'utf8'));
     process.stdout.write(formatNotifications(result.notifications));

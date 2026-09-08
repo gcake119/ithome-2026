@@ -6,6 +6,7 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 
 import { loadProjectConfigSync } from '../../../../scripts/ithome/config.mjs';
 import { validateBootstrapState } from './validate-bootstrap-state.mjs';
+import { isDirectExecution } from './cli-entrypoint.mjs';
 
 const BRIDGE_ROOT = '/Users/Shared/ithome-ironman-bridge';
 
@@ -231,6 +232,6 @@ async function main(argv) {
   process.stdout.write(`${JSON.stringify({ ...result, notifications, date, day: scheduled.day, nextState, dryRun: options.dryRun }, null, 2)}\n`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isDirectExecution(import.meta.url, process.argv[1])) {
   main(process.argv.slice(2)).catch((error) => { process.stderr.write(`${error.message}\n`); process.exitCode = 1; });
 }
