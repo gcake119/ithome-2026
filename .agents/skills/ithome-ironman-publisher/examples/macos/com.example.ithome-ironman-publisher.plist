@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.example.ithome-ironman-publisher</string>
+  <key>ProgramArguments</key><array><string>__RUN_SCRIPT__</string></array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>ITHOME_PUBLISHER_REPO</key><string>__PUBLISHER_REPO__</string>
+    <key>ITHOME_CHROME_PROFILE</key><string>__CHROME_PROFILE__</string>
+    <key>ITHOME_CDP_PORT</key><string>9223</string>
+    <key>ITHOME_DRAFTS_URL</key><string>__ITHOME_DRAFTS_URL__</string>
+    <key>ITHOME_PUBLIC_ARTICLES_URL</key><string>__ITHOME_PUBLIC_ARTICLES_URL__</string>
+    <key>ITHOME_EVENT_DIR</key><string>__EVENT_DIR__</string>
+    <key>ITHOME_BOOTSTRAP_STATE</key><string>__BOOTSTRAP_STATE__</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>30</integer></dict>
+  <key>WorkingDirectory</key><string>__PUBLISHER_REPO__</string>
+  <key>StandardOutPath</key><string>__STDOUT_LOG__</string>
+  <key>StandardErrorPath</key><string>__STDERR_LOG__</string>
+  <key>ProcessType</key><string>Background</string>
+</dict>
+</plist>

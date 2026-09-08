@@ -37,4 +37,6 @@ The driver refuses non-loopback CDP endpoints and non-iThome workflow URLs. An o
 
 ## Current readiness
 
-The decision core, Playwright browser adapter, and event／watcher contracts are repository-controlled and covered by mock tests. The isolated Chrome profile, service definition, 09:30 production schedule, and live iThome acceptance are not installed or enabled by this repository change. Until those items pass on-host acceptance, unattended publishing remains a target architecture rather than a current production capability.
+The decision core, Playwright browser adapter, scheduled Day lookup, and event／watcher contracts are repository-controlled and covered by tests. Reusable macOS wrapper and LaunchAgent examples are available under `examples/macos/`.
+
+The examples deliberately contain placeholders instead of account-specific paths. A local installation must still provide its own isolated Chrome profile, iThome URLs, event paths, service registration, and live acceptance. Repository files alone do not prove that unattended publishing is enabled on any host.

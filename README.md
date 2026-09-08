@@ -280,7 +280,12 @@ Day 1 發布後，還必須從公開文章驗證系列連結，才可建立 veri
 
 ### 7.4．另外安裝 09:30 排程
 
-這個 repo 提供 publisher 指令與安全規則，但不會自動修改你的作業系統排程。macOS 可以使用 LaunchAgent，Linux 可以使用 systemd timer；實際方式依執行 publisher 的電腦而定。
+這個 repo 提供 publisher 指令、安全規則，以及可自行審查的 macOS 範例：
+
+- `.agents/skills/ithome-ironman-publisher/examples/macos/run-publisher.zsh`
+- `.agents/skills/ithome-ironman-publisher/examples/macos/com.example.ithome-ironman-publisher.plist`
+
+範例不會自動修改作業系統排程，也不包含任何個人路徑。複製到 repo 外後，將 plist 的 `__...__` placeholder 全部替換成本機絕對路徑與 iThome URL，再用 `plutil -lint`、`zsh -n` 驗證，最後才以 `launchctl bootstrap gui/<uid> <plist>` 啟用。Linux 可使用相同 wrapper contract 建立 systemd timer。
 
 排程必須做到：
 

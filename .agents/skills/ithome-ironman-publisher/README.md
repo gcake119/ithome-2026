@@ -39,7 +39,7 @@ Use $ithome-ironman-publisher to run audit-drafts.
 
 Live import, repair, and publish operations retain the confirmation and stop conditions in `SKILL.md` and `references/safety-policy.md`. Invoking a mode is not blanket permission to publish, overwrite, delete, bypass anti-automation controls, or configure notifications.
 
-Codex／Computer Use cannot be made unattended by repository instructions because the final public publish action remains subject to platform action-time confirmation. The compliant unattended path is the separate local-runner contract documented in `references/unattended-runner.md`. Its Playwright browser adapter is implemented and mock-tested; the dedicated Chrome profile, service, schedule, and live acceptance remain local deployment work.
+Codex／Computer Use cannot be made unattended by repository instructions because the final public publish action remains subject to platform action-time confirmation. The compliant unattended path is the separate local-runner contract documented in `references/unattended-runner.md`. Its Playwright browser adapter, scheduled Day lookup, and reusable macOS LaunchAgent examples are repository-controlled and tested; the dedicated Chrome profile, rendered local paths, service registration, and live acceptance remain local deployment work.
 
 ## Local configuration
 
