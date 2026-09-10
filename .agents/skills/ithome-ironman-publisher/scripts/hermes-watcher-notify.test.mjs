@@ -34,4 +34,13 @@ describe('Hermes watcher Telegram formatter', () => {
     expect(formatNotifications([{ kind: 'public_watchdog_unavailable', day: 17 }]))
       .toBe('鐵人賽發文檢查失敗：目前無法可靠讀取系列頁，請人工確認。');
   });
+
+  test('formats GitHub Pages missing, mismatch, and unavailable results', () => {
+    expect(formatNotifications([{ kind: 'github_pages_missing', day: 2, date: '2026-09-10' }]))
+      .toBe('GitHub Pages 發布異常：Day 02（2026-09-10）頁面仍是 404。');
+    expect(formatNotifications([{ kind: 'github_pages_mismatch', day: 2, date: '2026-09-10', fields: ['canonical', 'date'] }]))
+      .toBe('GitHub Pages 發布異常：Day 02（2026-09-10）的 canonical、date 不一致。');
+    expect(formatNotifications([{ kind: 'github_pages_unavailable', day: 2, date: '2026-09-10' }]))
+      .toBe('GitHub Pages 檢查失敗：無法可靠讀取 Day 02（2026-09-10），請人工確認。');
+  });
 });

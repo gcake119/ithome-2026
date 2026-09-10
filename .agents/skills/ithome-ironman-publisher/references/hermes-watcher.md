@@ -42,6 +42,28 @@ node .agents/skills/ithome-ironman-publisher/scripts/hermes-watcher.mjs \
 
 Scheduling, Telegram relay, service-account filesystem verification, and the public-page network check remain Hermes deployment work and require separate authorization and live acceptance.
 
+## GitHub Pages 09:25 verification
+
+`scripts/hermes-github-pages-watchdog.mjs` is an independent GitHub Pages decision engine. It reads the initialized `ithome.config.json` schedule and checks the exact scheduled URL under `githubPages.publicUrl`; it does not read publisher events, browser state, credentials, or GitHub tokens, and it never triggers a workflow.
+
+- Run it at 09:25 Asia/Taipei with a Hermes-owned absolute state path ending in `github-pages-0925-state.json`.
+- It verifies the HTTP result, final URL, canonical URL, scheduled Day label, and scheduled date.
+- HTTP 404 produces `github_pages_missing`; content or redirect disagreement produces `github_pages_mismatch`; exhausted network or other HTTP failures produce `github_pages_unavailable`.
+- Each check tries once and retries at most twice, waiting two minutes between attempts. A verified page remains silent.
+- Deduplication uses `YYYY-MM-DD:github-pages-0925:<result>` and is independent from `watcher-state.json` and `public-watchdog-state.json`.
+- Pipe its JSON through `scripts/hermes-watcher-notify.mjs` and the existing Hermes `--no-agent` relay. Do not create another Telegram poller.
+
+Example dry run:
+
+```bash
+node .agents/skills/ithome-ironman-publisher/scripts/hermes-github-pages-watchdog.mjs \
+  --state "/absolute/hermes-owned-fixture/github-pages-0925-state.json" \
+  --date 2026-09-10 \
+  --dry-run
+```
+
+`--dry-run` performs the public read and prints the decision without writing state or sending a notification itself.
+
 ## Daily publication reminder and public verification
 
 `scripts/hermes-public-series-watchdog.mjs` implements the repository-controlled daily decision logic. It uses the explicit `ithome.config.json` schedule; it never guesses the Day from series order.

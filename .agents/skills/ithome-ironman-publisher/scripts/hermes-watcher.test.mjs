@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -54,6 +54,18 @@ describe('Hermes watcher decision engine', () => {
     expect(evaluate([event], { state: { processedEventIds: ['audit-missing'] } }).notifications).toEqual([]);
   });
 
+  test.each(['blocked', 'failed', 'uncertain'])('emits one publish_failed notification for %s publish evidence', (status) => {
+    const event = { ...common, eventId: `publish-${status}`, operation: 'publish-day', day: 2, status, result: { reasonCode: 'fixture_failure' } };
+    const first = evaluate([event]);
+    expect(first.notifications).toMatchObject([{ kind: 'publish_failed', day: 2, status }]);
+    expect(evaluate([event], { state: first.nextState }).notifications).toEqual([]);
+  });
+
+  test('keeps verified publish evidence silent', () => {
+    const event = { ...common, eventId: 'publish-verified', operation: 'publish-day', day: 2, status: 'verified', result: { publicVerification: 'verified' } };
+    expect(evaluate([event]).notifications).toEqual([]);
+  });
+
   test('reports stale abnormal evidence separately instead of presenting it as current', () => {
     const event = { ...common, eventId: 'old-failure', status: 'failed', completedAt: '2026-08-29T00:00:00.000Z', failure: { reasonCode: 'ui_unreadable', phase: 'scan' } };
     expect(evaluate([event]).notifications).toMatchObject([{ kind: 'stale_event', eventId: 'old-failure' }]);
@@ -88,6 +100,23 @@ describe('Hermes watcher decision engine', () => {
 });
 
 describe('Hermes watcher CLI boundary', () => {
+  test('runs when invoked through an absolute path containing spaces', () => {
+    const root = mkdtempSync(join(tmpdir(), 'ithome watcher cli '));
+    const repositoryAlias = join(root, 'deployment clone');
+    symlinkSync(resolve('.'), repositoryAlias, 'dir');
+    const events = join(root, 'events');
+    const bootstrap = join(root, 'missing-bootstrap.json');
+    const state = join(root, 'watcher-state.json');
+    mkdirSync(events);
+    writeFileSync(join(events, 'audit.json'), JSON.stringify({ ...common, eventId: 'audit-complete', status: 'complete' }));
+
+    const result = spawnSync(process.execPath, [join(repositoryAlias, '.agents/skills/ithome-ironman-publisher/scripts/hermes-watcher.mjs'),
+      '--events', events, '--bootstrap', bootstrap, '--state', state, '--now', now, '--dry-run'], { encoding: 'utf8' });
+
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ dryRun: true });
+  });
+
   test('dry-run reads fixtures without writing Hermes state or sending anything', () => {
     const root = mkdtempSync(join(tmpdir(), 'ithome-watcher-'));
     const events = join(root, 'events');

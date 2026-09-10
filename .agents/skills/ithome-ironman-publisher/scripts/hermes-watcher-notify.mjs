@@ -12,6 +12,9 @@ function formatOne(item) {
   if (item.kind === 'publication_reminder') return `鐵人賽發文提醒：今天應發布 ${day(item.day)}（${item.date}）。`;
   if (['public_article_missing', 'public_article_not_latest', 'public_article_mismatch', 'public_publish_event_missing'].includes(item.kind)) return `鐵人賽發文提醒：目前尚未偵測到 ${day(item.day)}（${item.date ?? '日期未提供'}）的公開文章。`;
   if (['public_watchdog_unavailable', 'public_watchdog_blocked'].includes(item.kind)) return '鐵人賽發文檢查失敗：目前無法可靠讀取系列頁，請人工確認。';
+  if (item.kind === 'github_pages_missing') return `GitHub Pages 發布異常：${day(item.day)}（${item.date}）頁面仍是 404。`;
+  if (item.kind === 'github_pages_mismatch') return `GitHub Pages 發布異常：${day(item.day)}（${item.date}）的 ${item.fields.join('、')} 不一致。`;
+  if (item.kind === 'github_pages_unavailable') return `GitHub Pages 檢查失敗：無法可靠讀取 ${day(item.day)}（${item.date}），請人工確認。`;
   if (item.kind === 'audit_missing') return `iThome 草稿盤點異常：缺少 ${item.days.map(day).join('、')}。`;
   if (item.kind === 'audit_duplicate') return `iThome 草稿盤點異常：${item.entries.map((entry) => `${day(entry.day)} 有 ${entry.count} 份重複草稿`).join('；')}，未自動刪除。`;
   if (item.kind === 'audit_mismatch') return `iThome 草稿盤點異常：${item.entries.map((entry) => `${day(entry.day)} 的 ${entry.fields.join('、')} 不一致`).join('；')}，未自動覆寫。`;
