@@ -10,7 +10,8 @@ function day(value) {
 
 function formatOne(item) {
   if (item.kind === 'publication_reminder') return `鐵人賽發文提醒：今天應發布 ${day(item.day)}（${item.date}）。`;
-  if (['public_article_missing', 'public_article_not_latest', 'public_article_mismatch', 'public_publish_event_missing'].includes(item.kind)) return `鐵人賽發文提醒：目前尚未偵測到 ${day(item.day)}（${item.date ?? '日期未提供'}）的公開文章。`;
+  if (['public_article_missing', 'public_article_not_latest', 'public_article_mismatch'].includes(item.kind)) return `鐵人賽發文提醒：目前尚未偵測到 ${day(item.day)}（${item.date ?? '日期未提供'}）的公開文章。`;
+  if (item.kind === 'public_publish_event_missing') return `iThome 發布證據不足：尚未收到 ${day(item.day)}（${item.date ?? '日期未提供'}）的 verified 發布結果，無法判定公開文章是否正確，請人工確認。`;
   if (['public_watchdog_unavailable', 'public_watchdog_blocked'].includes(item.kind)) return '鐵人賽發文檢查失敗：目前無法可靠讀取系列頁，請人工確認。';
   if (item.kind === 'github_pages_missing') return `GitHub Pages 發布異常：${day(item.day)}（${item.date}）頁面仍是 404。`;
   if (item.kind === 'github_pages_mismatch') return `GitHub Pages 發布異常：${day(item.day)}（${item.date}）的 ${item.fields.join('、')} 不一致。`;

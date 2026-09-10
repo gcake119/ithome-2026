@@ -35,6 +35,11 @@ describe('Hermes watcher Telegram formatter', () => {
       .toBe('鐵人賽發文檢查失敗：目前無法可靠讀取系列頁，請人工確認。');
   });
 
+  test('does not misreport missing verified publish evidence as a missing public article', () => {
+    expect(formatNotifications([{ kind: 'public_publish_event_missing', day: 2, date: '2026-09-10' }]))
+      .toBe('iThome 發布證據不足：尚未收到 Day 02（2026-09-10）的 verified 發布結果，無法判定公開文章是否正確，請人工確認。');
+  });
+
   test('formats GitHub Pages missing, mismatch, and unavailable results', () => {
     expect(formatNotifications([{ kind: 'github_pages_missing', day: 2, date: '2026-09-10' }]))
       .toBe('GitHub Pages 發布異常：Day 02（2026-09-10）頁面仍是 404。');
