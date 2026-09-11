@@ -52,6 +52,18 @@ function eventNotifications(event) {
   return [];
 }
 
+function isVerifiedPublish(event) {
+  return event.operation === 'publish-day'
+    && Number.isInteger(event.day) && event.day >= 1 && event.day <= 30
+    && event.status === 'verified'
+    && event.result?.reasonCode === 'published'
+    && event.result?.publishClickCount === 1
+    && event.result?.publicVerification === 'verified'
+    && typeof event.result?.articleUrl === 'string' && event.result.articleUrl !== ''
+    && typeof event.result?.title === 'string' && event.result.title !== ''
+    && typeof event.result?.canonicalUrl === 'string' && event.result.canonicalUrl !== '';
+}
+
 export function evaluateWatcher({ events, bootstrap, state = {}, now = new Date().toISOString(), checkpoint, maxAgeHours = DEFAULT_MAX_AGE_HOURS, project = loadProjectConfigSync() }) {
   if (!Array.isArray(events)) throw new Error('events must be an array');
   if (checkpoint !== undefined && !CHECKPOINTS.has(checkpoint)) throw new Error('checkpoint must be day1-1900 or day1-2230');
@@ -63,6 +75,15 @@ export function evaluateWatcher({ events, bootstrap, state = {}, now = new Date(
   const checkpointNotified = new Set(Array.isArray(state.checkpointNotified) ? state.checkpointNotified : []);
   const seenThisRun = new Map();
   const notifications = [];
+  const latestVerifiedPublishByDay = new Map();
+
+  for (const event of events) {
+    if (!validEnvelope(event, project) || !isVerifiedPublish(event)) continue;
+    const previous = latestVerifiedPublishByDay.get(event.day);
+    if (!previous || validDate(event.completedAt) > validDate(previous.completedAt)) {
+      latestVerifiedPublishByDay.set(event.day, event);
+    }
+  }
 
   for (const event of events) {
     if (!validEnvelope(event, project)) {
@@ -78,7 +99,10 @@ export function evaluateWatcher({ events, bootstrap, state = {}, now = new Date(
     if (processed.has(event.eventId)) continue;
 
     const ageHours = (nowMs - validDate(event.completedAt)) / 3_600_000;
-    const abnormal = eventNotifications(event);
+    const laterVerified = event.operation === 'publish-day'
+      && latestVerifiedPublishByDay.has(event.day)
+      && validDate(latestVerifiedPublishByDay.get(event.day).completedAt) > validDate(event.completedAt);
+    const abnormal = laterVerified ? [] : eventNotifications(event);
     if (ageHours > maxAgeHours) notifications.push(notification('stale_event', event, { ageHours: Math.floor(ageHours) }));
     else notifications.push(...abnormal);
     processed.add(event.eventId);

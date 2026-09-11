@@ -66,6 +66,53 @@ describe('Hermes watcher decision engine', () => {
     expect(evaluate([event]).notifications).toEqual([]);
   });
 
+  test('suppresses an earlier uncertain publish when a newer verified event exists for the same day', () => {
+    const uncertain = {
+      ...common,
+      eventId: 'publish-day3-uncertain',
+      operation: 'publish-day',
+      day: 3,
+      status: 'uncertain',
+      completedAt: '2026-09-01T10:55:00.000Z',
+      result: { reasonCode: 'post_publish_unverified', publishClickCount: 1, publicVerification: 'uncertain' },
+    };
+    const verified = {
+      ...common,
+      eventId: 'publish-day3-verified',
+      operation: 'publish-day',
+      day: 3,
+      status: 'verified',
+      completedAt: '2026-09-01T10:57:00.000Z',
+      result: {
+        reasonCode: 'published',
+        publishClickCount: 1,
+        publicVerification: 'verified',
+        articleUrl: 'https://ithelp.ithome.com.tw/articles/day3',
+        title: 'Day 3 title',
+        canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/03/',
+      },
+    };
+
+    const result = evaluate([verified, uncertain]);
+
+    expect(result.notifications).toEqual([]);
+    expect(result.nextState.processedEventIds).toEqual(['publish-day3-verified', 'publish-day3-uncertain']);
+  });
+
+  test('still notifies when the latest publish event for a day is abnormal', () => {
+    const verified = { ...common, eventId: 'publish-day3-verified', operation: 'publish-day', day: 3, status: 'verified', completedAt: '2026-09-01T10:55:00.000Z' };
+    const uncertain = { ...common, eventId: 'publish-day3-uncertain', operation: 'publish-day', day: 3, status: 'uncertain', completedAt: '2026-09-01T10:57:00.000Z', result: { reasonCode: 'post_publish_unverified' } };
+
+    expect(evaluate([uncertain, verified]).notifications).toMatchObject([{ kind: 'publish_failed', day: 3, status: 'uncertain' }]);
+  });
+
+  test('does not let malformed verified evidence suppress an earlier anomaly', () => {
+    const uncertain = { ...common, eventId: 'publish-day3-uncertain', operation: 'publish-day', day: 3, status: 'uncertain', completedAt: '2026-09-01T10:55:00.000Z', result: { reasonCode: 'post_publish_unverified' } };
+    const malformedVerified = { ...common, eventId: 'publish-day3-malformed', operation: 'publish-day', day: 3, status: 'verified', completedAt: '2026-09-01T10:57:00.000Z', result: { publicVerification: 'verified' } };
+
+    expect(evaluate([uncertain, malformedVerified]).notifications).toMatchObject([{ kind: 'publish_failed', day: 3, status: 'uncertain' }]);
+  });
+
   test('reports stale abnormal evidence separately instead of presenting it as current', () => {
     const event = { ...common, eventId: 'old-failure', status: 'failed', completedAt: '2026-08-29T00:00:00.000Z', failure: { reasonCode: 'ui_unreadable', phase: 'scan' } };
     expect(evaluate([event]).notifications).toMatchObject([{ kind: 'stale_event', eventId: 'old-failure' }]);
