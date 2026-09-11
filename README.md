@@ -236,6 +236,17 @@ macOS 範例：
   https://ithelp.ithome.com.tw/
 ```
 
+如果排程使用的專用 Chrome 沒有出現在畫面上，可用同一組本機環境設定執行可見登入啟動器：
+
+```bash
+ITHOME_CHROME_PROFILE="/你自己的/repo外路徑/ithome-publisher-chrome" \
+ITHOME_DRAFTS_URL="https://ithelp.ithome.com.tw/users/你的使用者編號/ironman" \
+ITHOME_CDP_PORT=9223 \
+./.agents/skills/ithome-ironman-publisher/examples/macos/open-login-chrome.zsh
+```
+
+這個入口只會顯示同一個隔離 profile，供人手動登入或完成 Cloudflare 驗證；它不會執行 publisher，也不會點擊發布。平常使用的預設 Chrome 不具備這個排程所需的本機 CDP 設定，因此不會被接管或共用登入資料。
+
 CDP 只能使用 `127.0.0.1`、`localhost` 或 `::1`。不可綁到 LAN／公開網路，也不可把 profile、cookie、session、密碼或一次性驗證碼交給 repo 或 Agent。
 
 ### Codex Computer Use 和專用 Chrome 不是同一件事

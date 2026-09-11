@@ -35,6 +35,8 @@ The local deployment must provide all of the following outside Git:
 
 The driver refuses non-loopback CDP endpoints and non-iThome workflow URLs. An ordinary Chrome window without an enabled CDP endpoint cannot be attached. Do not expose the CDP port to the LAN, copy the Computer Use profile, or commit local URLs／profile paths.
 
+For interactive login or anti-automation recovery, run `examples/macos/open-login-chrome.zsh` with the same `ITHOME_CHROME_PROFILE`, `ITHOME_DRAFTS_URL`, and optional `ITHOME_CDP_PORT` used by the scheduled runner. This opens the isolated publisher profile in a visible Chrome window without invoking the publisher or clicking publish. Finish login or the browser challenge manually, then leave that profile available for the next scheduled preflight. Do not substitute the everyday default Chrome profile.
+
 ## Current readiness
 
 The decision core, Playwright browser adapter, scheduled Day lookup, and event／watcher contracts are repository-controlled and covered by tests. Reusable macOS wrapper and LaunchAgent examples are available under `examples/macos/`.

@@ -12,6 +12,17 @@ describe('macOS unattended publisher examples', () => {
     expect(script).not.toMatch(/cookie|password|token/i);
   });
 
+  test('provides a visible login launcher for the isolated publisher profile', async () => {
+    const script = await readFile(new URL('open-login-chrome.zsh', exampleRoot), 'utf8');
+    expect(script).toContain('--remote-debugging-address=127.0.0.1');
+    expect(script).toContain('--user-data-dir=$chrome_profile');
+    expect(script).toContain('--new-window');
+    expect(script).toContain('Google Chrome');
+    expect(script).not.toContain('run-scheduled-browser-publisher.mjs');
+    expect(script).not.toMatch(/\/Users\/[A-Za-z0-9._-]+/);
+    expect(script).not.toMatch(/cookie|password|token/i);
+  });
+
   test('schedules 09:30 and keeps local paths as explicit placeholders', async () => {
     const plist = await readFile(new URL('com.example.ithome-ironman-publisher.plist', exampleRoot), 'utf8');
     expect(plist).toContain('<key>Hour</key><integer>9</integer>');

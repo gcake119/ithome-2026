@@ -9,8 +9,8 @@ function outcome(status, fingerprint, reasonCode, overrides = {}) {
 }
 
 function exactSession(session, { expectedAccount, expectedSeriesTitle, expectedContestTag }) {
-  if (!session?.authenticated) return 'login_required';
   if (session.antiAutomation) return 'anti_automation';
+  if (!session?.authenticated) return 'login_required';
   if (session.account !== expectedAccount) return 'unexpected_account';
   return null;
 }

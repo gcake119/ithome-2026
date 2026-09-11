@@ -75,6 +75,18 @@ describe('iThome browser adapter', () => {
     expect(browserDriver.publishOnce).not.toHaveBeenCalled();
   });
 
+  test('reports anti-automation before an unauthenticated session state', async () => {
+    const browserDriver = driver({
+      inspectSession: vi.fn(async () => ({ authenticated: false, antiAutomation: 'cloudflare' })),
+    });
+
+    const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'cloudflare' });
+
+    expect(outcome).toMatchObject({ status: 'blocked', result: { reasonCode: 'anti_automation', publishClickCount: 0 } });
+    expect(browserDriver.scanDrafts).not.toHaveBeenCalled();
+    expect(browserDriver.publishOnce).not.toHaveBeenCalled();
+  });
+
   test('blocks a draft from an unexpected series', async () => {
     const browserDriver = driver({
       inspectDraft: vi.fn(async () => ({
