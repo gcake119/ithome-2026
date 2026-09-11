@@ -39,12 +39,12 @@ async function main() {
     silent: result.silent ?? true,
     reasonCode: result.result?.reasonCode ?? null,
   })}\n`);
-  process.exitCode = result.exitCode;
+  process.exit(result.exitCode);
 }
 
 if (resolve(process.argv[1] || '') === fileURLToPath(import.meta.url)) {
   main().catch((error) => {
     process.stderr.write(`${error.message}\n`);
-    process.exitCode = 1;
+    process.exit(1);
   });
 }

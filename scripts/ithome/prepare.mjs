@@ -97,7 +97,7 @@ async function main() {
   process.stdout.write(payload.body);
 }
 
-if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv[1]}`) {
+if (typeof process !== 'undefined' && fileURLToPath(import.meta.url) === path.resolve(process.argv[1] || '')) {
   main().catch((error) => {
     console.error(`[ithome:prepare] ${error.message}`);
     process.exitCode = 1;

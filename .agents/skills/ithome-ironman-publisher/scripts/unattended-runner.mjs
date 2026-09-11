@@ -14,7 +14,7 @@ function validPayload(payload, day, project) {
   const syncLine = `本文同步刊載於[個人連載網站](${canonicalUrl})`;
   return payload?.day === day
     && payload.dayString === dayString
-    && payload.sourcePath === `src/content/posts/day-${dayString}.md`
+    && payload.sourcePath === `src/content/ironman/day-${dayString}.md`
     && typeof payload.title === 'string' && payload.title.trim() !== ''
     && typeof payload.body === 'string' && payload.body.split(/\r?\n/, 1)[0] === syncLine
     && payload.canonicalUrl === canonicalUrl

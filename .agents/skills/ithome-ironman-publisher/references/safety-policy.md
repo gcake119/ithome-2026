@@ -2,7 +2,7 @@
 
 ## Content and Day authority
 
-- `src/content/posts/day-NN.md` is the only article source.
+- `src/content/ironman/day-NN.md` is the only article source.
 - Obtain `title`, `body`, and `canonicalUrl` only from a fresh `pnpm ithome:prepare -- --day N --json` result.
 - Do not parse Markdown, reconstruct frontmatter, edit payload text, add the sync line, normalize punctuation, or reuse a saved body.
 - Paste the entire payload `body`; it already contains the iThome-only sync line. Never write that line back to Markdown.

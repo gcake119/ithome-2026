@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 
-import { createPlaywrightIthomeDriver, matchDraftEntries } from './playwright-browser-driver.mjs';
+import { createPlaywrightIthomeDriver, matchDraftEntries, PUBLISH_MENU_SELECTOR } from './playwright-browser-driver.mjs';
 
 function fakePage(bodyText = '') {
   return {
@@ -28,6 +28,10 @@ const config = {
 };
 
 describe('Playwright iThome browser driver', () => {
+  test('scopes the publish dropdown to the editor save group', () => {
+    expect(PUBLISH_MENU_SELECTOR).toBe('button.save-group__dropdown-toggle:visible');
+  });
+
   test('normalizes whitespace around server-rendered draft hrefs', () => {
     expect(matchDraftEntries([{
       href: '\n https://ithelp.ithome.com.tw/articles/example-draft/draft \n',

@@ -11,7 +11,7 @@ const project = {
 const payload = {
   day: 12,
   dayString: '12',
-  sourcePath: 'src/content/posts/day-12.md',
+  sourcePath: 'src/content/ironman/day-12.md',
   title: 'Day 12 test',
   body: '本文同步刊載於[個人連載網站](https://gcake119.github.io/ithome-2026/day/12/)\n\nBody',
   canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/12/',

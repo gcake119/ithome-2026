@@ -2,6 +2,7 @@
 
 import { lstatSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { loadProjectConfigSync } from '../../../../scripts/ithome/config.mjs';
 
 function validTimestamp(value) {
@@ -53,7 +54,7 @@ function main(argv) {
   process.stdout.write(`${JSON.stringify({ status: 'verified', seriesId: state.seriesId, seriesUrl: state.seriesUrl })}\n`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (fileURLToPath(import.meta.url) === resolve(process.argv[1] || '')) {
   try {
     main(process.argv.slice(2));
   } catch (error) {

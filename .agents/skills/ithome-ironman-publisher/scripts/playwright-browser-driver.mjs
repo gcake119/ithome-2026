@@ -1,6 +1,7 @@
 import { chromium } from 'playwright-core';
 
 const ITHOME_ORIGIN = 'https://ithelp.ithome.com.tw';
+export const PUBLISH_MENU_SELECTOR = 'button.save-group__dropdown-toggle:visible';
 const BLOCK_PATTERNS = [
   ['cloudflare', /cloudflare|attention required/i],
   ['captcha', /captcha|驗證您是人類|人機驗證/i],
@@ -36,7 +37,7 @@ function blockedBy(text) {
 }
 
 async function navigate(page, url) {
-  const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  const response = await page.goto(url, { waitUntil: 'load', timeout: 30_000 });
   if (response?.status?.() === 429) throw reasonError('rate_limited');
   const text = await bodyText(page);
   const antiAutomation = blockedBy(text);
@@ -194,10 +195,11 @@ export function createPlaywrightIthomeDriver({ chromiumImpl = chromium, config }
 
       let publishAction = activePage.getByText('發表文章', { exact: true });
       if (await exactVisibleCount(publishAction) === 0) {
-        const menuButtons = activePage.locator('button[aria-haspopup="menu"]:visible, button.dropdown-toggle:visible');
+        const menuButtons = activePage.locator(PUBLISH_MENU_SELECTOR);
         if (await menuButtons.count() !== 1) throw reasonError('publish_control_ambiguous');
         await menuButtons.click();
         publishAction = activePage.getByText('發表文章', { exact: true });
+        await publishAction.waitFor({ state: 'visible', timeout: 5_000 });
       }
 
       if (await exactVisibleCount(publishAction) !== 1) throw reasonError('publish_control_ambiguous');

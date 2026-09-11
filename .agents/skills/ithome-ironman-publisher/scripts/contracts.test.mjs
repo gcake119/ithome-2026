@@ -28,12 +28,12 @@ const common = {
 };
 
 describe('inventory contract', () => {
-  test('reports current 0/30 readiness without treating layout fixtures as publishable sources', () => {
-    const result = spawnSync(process.execPath, [join(scriptsDir, 'build-inventory.mjs'), '--all'], { cwd: repoRoot, encoding: 'utf8' });
+  test('reports a canonical ironman source as a publishable payload', () => {
+    const result = spawnSync(process.execPath, [join(scriptsDir, 'build-inventory.mjs'), '--day', '2'], { cwd: repoRoot, encoding: 'utf8' });
     const inventory = JSON.parse(result.stdout);
-    expect(result.status).not.toBe(0);
-    expect(inventory).toMatchObject({ status: 'failed', expected: 30, valid: 0, failed: Array.from({ length: 30 }, (_, index) => index + 1) });
-    expect(inventory.items.filter((item) => item.status === 'valid')).toHaveLength(0);
+    expect(result.status).toBe(0);
+    expect(inventory).toMatchObject({ status: 'complete', expected: 1, valid: 1, failed: [] });
+    expect(inventory.items).toMatchObject([{ day: 2, sourcePath: 'src/content/ironman/day-02.md', status: 'valid' }]);
     expect(inventory.items.filter((item) => item.status === 'valid').every((item) => /^sha256:[a-f0-9]{64}$/.test(item.fingerprint))).toBe(true);
   }, 30_000);
 });

@@ -10,7 +10,7 @@ Required fields and invariants:
 
 - `day` equals the explicit requested Day.
 - `dayString` equals the zero-padded Day.
-- `sourcePath` equals `src/content/posts/day-NN.md`.
+- `sourcePath` equals `src/content/ironman/day-NN.md`.
 - `title` and `body` are non-empty strings.
 - `canonicalUrl` exactly equals `<githubPages.publicUrl>/day/NN/` from `ithome.config.json`.
 - `syncLine` exactly equals `本文同步刊載於[個人連載網站](<canonicalUrl>)`.
