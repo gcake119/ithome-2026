@@ -41,6 +41,15 @@ function abnormalResult(reasonCode, publishClickCount = 0, publicVerification = 
   return { reasonCode, publishClickCount, publicVerification };
 }
 
+async function complete(result, event, emit) {
+  try {
+    await emit(event);
+    return { ...result, eventPersisted: true };
+  } catch {
+    return { ...result, exitCode: 1, silent: false, eventPersisted: false, eventError: 'event_write_failed' };
+  }
+}
+
 export async function runUnattendedPublisher({ day, prepare, publish, emit, project, now = () => new Date().toISOString(), runId = `local-publisher-${randomUUID()}` }) {
   if (!Number.isInteger(day) || day < 1 || day > 30) throw new Error('day must be an integer from 1 to 30');
   if (![prepare, publish, emit].every((value) => typeof value === 'function')) throw new Error('prepare, publish, and emit are required functions');
@@ -52,14 +61,20 @@ export async function runUnattendedPublisher({ day, prepare, publish, emit, proj
   } catch (error) {
     const reasonCode = error?.code === 'ENOENT' ? 'payload_missing' : 'payload_failed';
     const result = abnormalResult(reasonCode);
-    await emit(eventEnvelope({ day, status: 'blocked', result, completedAt: now(), runId, project }));
-    return { exitCode: 1, silent: false, status: 'blocked', result };
+    return complete(
+      { exitCode: 1, silent: false, status: 'blocked', result },
+      eventEnvelope({ day, status: 'blocked', result, completedAt: now(), runId, project }),
+      emit,
+    );
   }
 
   if (!validPayload(payload, day, project)) {
     const result = abnormalResult('payload_mismatch');
-    await emit(eventEnvelope({ day, status: 'blocked', result, completedAt: now(), runId, project }));
-    return { exitCode: 1, silent: false, status: 'blocked', result };
+    return complete(
+      { exitCode: 1, silent: false, status: 'blocked', result },
+      eventEnvelope({ day, status: 'blocked', result, completedAt: now(), runId, project }),
+      emit,
+    );
   }
 
   const expectedFingerprint = fingerprint(payload);
@@ -80,7 +95,10 @@ export async function runUnattendedPublisher({ day, prepare, publish, emit, proj
     };
   }
 
-  await emit(eventEnvelope({ day, status: outcome.status, result: outcome.result, completedAt: now(), runId, project }));
   const silent = outcome.status === 'verified';
-  return { exitCode: silent ? 0 : 1, silent, status: outcome.status, result: outcome.result };
+  return complete(
+    { exitCode: silent ? 0 : 1, silent, status: outcome.status, result: outcome.result },
+    eventEnvelope({ day, status: outcome.status, result: outcome.result, completedAt: now(), runId, project }),
+    emit,
+  );
 }

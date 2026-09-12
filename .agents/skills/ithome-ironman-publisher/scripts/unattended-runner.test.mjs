@@ -99,4 +99,32 @@ describe('unattended local publisher runner', () => {
     expect(result).toMatchObject({ exitCode: 1, silent: false, status: 'uncertain' });
     expect(events[0].result).toMatchObject({ reasonCode: 'driver_payload_stale', publishClickCount: 1 });
   });
+
+  test('preserves the publish result when event persistence fails after the driver returns', async () => {
+    const result = await runUnattendedPublisher({
+      day: 12,
+      project,
+      prepare: async () => payload,
+      publish: async ({ fingerprint }) => ({
+        status: 'verified',
+        fingerprint,
+        result: {
+          reasonCode: 'published', publishClickCount: 1, publicVerification: 'verified',
+          articleUrl: 'https://ithelp.ithome.com.tw/articles/123456', title: payload.title, canonicalUrl: payload.canonicalUrl,
+        },
+      }),
+      emit: async () => { throw new Error('event directory unavailable'); },
+      now: () => '2026-09-12T01:00:00.000Z',
+      runId: 'runner-test-event-failure',
+    });
+
+    expect(result).toMatchObject({
+      exitCode: 1,
+      silent: false,
+      status: 'verified',
+      eventPersisted: false,
+      eventError: 'event_write_failed',
+      result: { reasonCode: 'published', publishClickCount: 1, publicVerification: 'verified' },
+    });
+  });
 });

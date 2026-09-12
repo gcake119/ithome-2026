@@ -2,6 +2,7 @@
 
 import { execFile } from 'node:child_process';
 import { lstat, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { lstatSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
@@ -39,6 +40,10 @@ export function loadRunnerConfig(env) {
   const bootstrapState = required(env, 'ITHOME_BOOTSTRAP_STATE');
   if (!isAbsolute(eventDir)) throw new Error('ITHOME_EVENT_DIR must be absolute');
   if (!isAbsolute(bootstrapState)) throw new Error('ITHOME_BOOTSTRAP_STATE must be absolute');
+  let eventDirStat;
+  try { eventDirStat = lstatSync(resolve(eventDir)); }
+  catch { throw new Error('Event directory must already exist'); }
+  if (!eventDirStat.isDirectory() || eventDirStat.isSymbolicLink()) throw new Error('Event directory must be a direct directory');
   return {
     cdpEndpoint,
     draftsUrl,
