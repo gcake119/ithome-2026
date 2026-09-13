@@ -16,7 +16,11 @@ The reusable fail-closed decision core is `scripts/unattended-runner.mjs`. A sep
 
 The adapter must audit the intended account, exact unique draft, title, canonical URL, sync line, public duplicate state, bootstrap state, and anti-automation／login state immediately before publishing. Missing, duplicate, mismatch, blocked, failed, uncertain, or stale evidence fails closed. It must never retry a publish click whose result is uncertain.
 
+The adapter persists one hidden, non-overwritable per-Day click receipt in the configured event directory and records `publishClickCount = 1` immediately before dispatching the one allowed click, not after Playwright acknowledges it. An existing receipt blocks another DOM click even after a process restart. A receipt followed by a lost browser acknowledgement is therefore conservative evidence requiring read-only recovery; it is never safe to retry automatically. After dispatch, the adapter may repeat only bounded read-only public verification to allow for normal publication propagation; it never repeats the mutation.
+
 The core is silent only when the result is `verified`. Every result still writes a machine-readable event so the Hermes watcher can deduplicate it. Hermes decides whether an anomaly needs Telegram relay; Hermes does not invoke the runner and does not hold iThome credentials.
+
+Before connecting to Chrome, the local entrypoint validates the configured event directory as a direct directory and performs a temporary create/remove probe. This catches missing or non-writable sinks before any remote mutation.
 
 ## Playwright browser adapter
 

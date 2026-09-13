@@ -1,9 +1,9 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
-import { loadRunnerConfig, parseRunnerArgs } from './run-browser-publisher.mjs';
+import { assertEventSinkWritable, createClickReceiptStore, loadRunnerConfig, parseRunnerArgs } from './run-browser-publisher.mjs';
 
 describe('browser publisher CLI configuration', () => {
   test('accepts the pnpm argument separator', () => {
@@ -39,5 +39,22 @@ describe('browser publisher CLI configuration', () => {
 
   test('rejects missing local configuration', () => {
     expect(() => loadRunnerConfig({})).toThrow(/ITHOME_CDP_ENDPOINT/);
+  });
+
+  test('probes event persistence before browser work without leaving an artifact', async () => {
+    const eventDir = mkdtempSync(join(tmpdir(), 'ithome-events-probe-'));
+
+    await expect(assertEventSinkWritable(eventDir)).resolves.toBeUndefined();
+    expect(readdirSync(eventDir)).toEqual([]);
+  });
+
+  test('persists one non-overwritable publish-click receipt per Day', async () => {
+    const eventDir = mkdtempSync(join(tmpdir(), 'ithome-click-receipt-'));
+    const record = createClickReceiptStore(eventDir);
+
+    await expect(record({ day: 12, fingerprint: 'sha256:fresh', runId: 'first-run' })).resolves.toBeUndefined();
+    await expect(record({ day: 12, fingerprint: 'sha256:fresh', runId: 'second-run' }))
+      .rejects.toMatchObject({ reasonCode: 'prior_publish_click_recorded' });
+    expect(readdirSync(eventDir)).toEqual(['.publish-click-day-12.receipt']);
   });
 });

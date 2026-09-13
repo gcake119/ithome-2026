@@ -127,4 +127,51 @@ describe('unattended local publisher runner', () => {
       result: { reasonCode: 'published', publishClickCount: 1, publicVerification: 'verified' },
     });
   });
+
+  test('rejects a verified driver outcome that lacks complete public evidence', async () => {
+    const events = [];
+    const result = await runUnattendedPublisher({
+      day: 12,
+      project,
+      prepare: async () => payload,
+      publish: async ({ fingerprint }) => ({
+        status: 'verified',
+        fingerprint,
+        result: { reasonCode: 'published', publishClickCount: 1, publicVerification: 'verified' },
+      }),
+      emit: async (event) => events.push(event),
+      now: () => '2026-09-12T01:00:00.000Z',
+      runId: 'runner-test-incomplete-verified',
+    });
+
+    expect(result).toMatchObject({
+      exitCode: 1,
+      silent: false,
+      status: 'uncertain',
+      result: { reasonCode: 'driver_contract_invalid', publishClickCount: 1, publicVerification: 'uncertain' },
+    });
+    expect(events[0]).toMatchObject({ status: 'uncertain', result: { reasonCode: 'driver_contract_invalid' } });
+  });
+
+  test('rejects verified driver evidence with a non-iThome article URL', async () => {
+    const events = [];
+    const result = await runUnattendedPublisher({
+      day: 12,
+      project,
+      prepare: async () => payload,
+      publish: async ({ fingerprint }) => ({
+        status: 'verified', fingerprint,
+        result: {
+          reasonCode: 'published', publishClickCount: 1, publicVerification: 'verified',
+          articleUrl: 'https://example.com/articles/123456', title: payload.title, canonicalUrl: payload.canonicalUrl,
+        },
+      }),
+      emit: async (event) => events.push(event),
+      now: () => '2026-09-12T01:00:00.000Z',
+      runId: 'runner-test-foreign-url',
+    });
+
+    expect(result).toMatchObject({ status: 'uncertain', silent: false, result: { reasonCode: 'driver_contract_invalid' } });
+    expect(events[0].status).toBe('uncertain');
+  });
 });

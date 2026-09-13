@@ -1,4 +1,5 @@
 const DEFAULT_RESULT = Object.freeze({ publishClickCount: 0, publicVerification: 'not_started' });
+const TERMINAL_VERIFICATION_REASONS = new Set(['cloudflare', 'captcha', 'rate_limited']);
 
 function outcome(status, fingerprint, reasonCode, overrides = {}) {
   return {
@@ -29,8 +30,13 @@ export function createIthomeBrowserAdapter({
   expectedSeriesTitle,
   expectedContestTag,
   loadBootstrap,
+  recordClickDispatched,
+  verificationAttempts = 3,
+  verificationDelayMs = 2_000,
 }) {
-  if (!driver || typeof loadBootstrap !== 'function') throw new Error('driver and loadBootstrap are required');
+  if (!driver || typeof loadBootstrap !== 'function' || typeof recordClickDispatched !== 'function') {
+    throw new Error('driver, loadBootstrap, and recordClickDispatched are required');
+  }
   if (![expectedAccount, expectedSeriesTitle, expectedContestTag].every((value) => typeof value === 'string' && value)) {
     throw new Error('expected account, series title, and contest tag are required');
   }
@@ -65,28 +71,47 @@ export function createIthomeBrowserAdapter({
       const draft = await driver.inspectDraft({ draft: drafts[0], payload, bootstrap });
       if (!exactDraft(draft, payload, { expectedSeriesTitle, expectedContestTag })) return outcome('blocked', fingerprint, 'draft_mismatch');
 
-      const publishResult = await driver.publishOnce({ draft: drafts[0], payload, bootstrap });
-      if (!publishResult?.clicked) return outcome('failed', fingerprint, 'publish_not_clicked');
-      publishClickCount = 1;
-
-      try {
-        const verification = await driver.verifyPublic({ payload, bootstrap });
-        if (!verification?.verified) {
-          return outcome('uncertain', fingerprint, 'post_publish_unverified', { publishClickCount, publicVerification: 'uncertain' });
-        }
-        return outcome('verified', fingerprint, 'published', {
-          publishClickCount,
-          publicVerification: 'verified',
-          articleUrl: verification.articleUrl,
-          title: payload.title,
-          canonicalUrl: payload.canonicalUrl,
-        });
-      } catch {
+      const publishResult = await driver.publishOnce({
+        draft: drafts[0],
+        payload,
+        bootstrap,
+        markClickDispatched: async () => {
+          await recordClickDispatched({ day: payload.day, fingerprint, runId });
+          publishClickCount = 1;
+        },
+      });
+      if (!publishResult?.clicked && publishClickCount === 1) {
         return outcome('uncertain', fingerprint, 'post_publish_unverified', { publishClickCount, publicVerification: 'uncertain' });
       }
+      if (!publishResult?.clicked) return outcome('failed', fingerprint, 'publish_not_clicked');
+      if (publishClickCount !== 1) return outcome('uncertain', fingerprint, 'publish_click_untracked', {
+        publishClickCount: 1,
+        publicVerification: 'uncertain',
+      });
+
+      for (let attempt = 1; attempt <= verificationAttempts; attempt += 1) {
+        try {
+          const verification = await driver.verifyPublic({ payload, bootstrap });
+          if (verification?.verified) {
+            return outcome('verified', fingerprint, 'published', {
+              publishClickCount,
+              publicVerification: 'verified',
+              articleUrl: verification.articleUrl,
+              title: payload.title,
+              canonicalUrl: payload.canonicalUrl,
+            });
+          }
+        } catch (error) {
+          if (TERMINAL_VERIFICATION_REASONS.has(error?.reasonCode)) break;
+        }
+        if (attempt < verificationAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, verificationDelayMs));
+        }
+      }
+      return outcome('uncertain', fingerprint, 'post_publish_unverified', { publishClickCount, publicVerification: 'uncertain' });
     } catch (error) {
       const reasonCode = error?.reasonCode || (publishClickCount === 1 ? 'post_publish_unverified' : 'browser_driver_failed');
-      const status = publishClickCount === 1 ? 'uncertain' : 'failed';
+      const status = publishClickCount === 1 ? 'uncertain' : reasonCode === 'prior_publish_click_recorded' ? 'blocked' : 'failed';
       return outcome(status, fingerprint, reasonCode, {
         publishClickCount,
         publicVerification: publishClickCount === 1 ? 'uncertain' : 'not_started',

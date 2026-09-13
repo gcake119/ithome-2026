@@ -34,7 +34,7 @@ function driver(overrides = {}) {
       seriesTitle: 'AI 都會寫程式了，我還要學什麼？——從「做得出來」到學會開發的 30 天',
       contestTag: '18th鐵人賽',
     })),
-    publishOnce: vi.fn(async () => ({ clicked: true })),
+    publishOnce: vi.fn(async ({ markClickDispatched }) => { await markClickDispatched(); return { clicked: true }; }),
     verifyPublic: vi.fn(async () => ({ verified: true, articleUrl: 'https://ithelp.ithome.com.tw/articles/123456' })),
     ...overrides,
   };
@@ -47,6 +47,8 @@ function adapter(browserDriver, loadBootstrap = async () => verifiedBootstrap())
     expectedSeriesTitle: 'AI 都會寫程式了，我還要學什麼？——從「做得出來」到學會開發的 30 天',
     expectedContestTag: '18th鐵人賽',
     loadBootstrap,
+    recordClickDispatched: async () => {},
+    verificationDelayMs: 0,
   });
 }
 
@@ -110,6 +112,7 @@ describe('iThome browser adapter', () => {
     const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'verified' });
 
     expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
+    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(1);
     expect(outcome).toMatchObject({
       status: 'verified',
       fingerprint: 'sha256:fresh',
@@ -130,9 +133,89 @@ describe('iThome browser adapter', () => {
     const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'uncertain' });
 
     expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
+    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(3);
     expect(outcome).toMatchObject({
       status: 'uncertain',
       result: { reasonCode: 'post_publish_unverified', publishClickCount: 1, publicVerification: 'uncertain' },
     });
+  });
+
+  test('converges delayed public evidence through read-only verification retries', async () => {
+    const browserDriver = driver({
+      verifyPublic: vi.fn()
+        .mockResolvedValueOnce({ verified: false })
+        .mockResolvedValueOnce({ verified: true, articleUrl: 'https://ithelp.ithome.com.tw/articles/123456' }),
+    });
+    const publish = createIthomeBrowserAdapter({
+      driver: browserDriver,
+      expectedAccount: 'gcake119',
+      expectedSeriesTitle: 'AI 都會寫程式了，我還要學什麼？——從「做得出來」到學會開發的 30 天',
+      expectedContestTag: '18th鐵人賽',
+      loadBootstrap: async () => verifiedBootstrap(),
+      recordClickDispatched: async () => {},
+      verificationDelayMs: 0,
+    });
+
+    const outcome = await publish({ payload, fingerprint: 'sha256:fresh', runId: 'eventual-verification' });
+
+    expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
+    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(2);
+    expect(outcome).toMatchObject({ status: 'verified', result: { publishClickCount: 1, publicVerification: 'verified' } });
+  });
+
+  test.each(['cloudflare', 'captcha', 'rate_limited'])('stops public verification immediately on %s', async (reasonCode) => {
+    const browserDriver = driver({
+      verifyPublic: vi.fn(async () => {
+        throw Object.assign(new Error(reasonCode), { reasonCode });
+      }),
+    });
+
+    const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: `blocked-${reasonCode}` });
+
+    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(1);
+    expect(outcome).toMatchObject({
+      status: 'uncertain',
+      result: { reasonCode: 'post_publish_unverified', publishClickCount: 1, publicVerification: 'uncertain' },
+    });
+  });
+
+  test('records one possible click when the browser loses acknowledgement after dispatch', async () => {
+    const browserDriver = driver({
+      publishOnce: vi.fn(async ({ markClickDispatched }) => {
+        await markClickDispatched();
+        throw new Error('target closed after click dispatch');
+      }),
+    });
+
+    const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'lost-ack' });
+
+    expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
+    expect(outcome).toMatchObject({
+      status: 'uncertain',
+      result: { reasonCode: 'post_publish_unverified', publishClickCount: 1, publicVerification: 'uncertain' },
+    });
+  });
+
+  test('blocks before DOM dispatch when a prior click receipt exists', async () => {
+    const browserDriver = driver();
+    const publish = createIthomeBrowserAdapter({
+      driver: browserDriver,
+      expectedAccount: 'gcake119',
+      expectedSeriesTitle: 'AI 都會寫程式了，我還要學什麼？——從「做得出來」到學會開發的 30 天',
+      expectedContestTag: '18th鐵人賽',
+      loadBootstrap: async () => verifiedBootstrap(),
+      recordClickDispatched: async () => {
+        throw Object.assign(new Error('already recorded'), { reasonCode: 'prior_publish_click_recorded' });
+      },
+      verificationDelayMs: 0,
+    });
+
+    const outcome = await publish({ payload, fingerprint: 'sha256:fresh', runId: 'duplicate-run' });
+
+    expect(outcome).toMatchObject({
+      status: 'blocked',
+      result: { reasonCode: 'prior_publish_click_recorded', publishClickCount: 0, publicVerification: 'not_started' },
+    });
+    expect(browserDriver.verifyPublic).not.toHaveBeenCalled();
   });
 });

@@ -14,7 +14,7 @@
 - Never delete any draft, overwrite a conflicting draft, or modify a public article.
 - `repair-drafts` creates only entries classified as `missing` by a fresh reliable audit.
 - `publish-day` never creates a draft.
-- A run may execute at most one publish click. Record the click count immediately after it, before interpreting the result.
+- A run may execute at most one publish click. Persist the per-Day click receipt and record the click count immediately before dispatch, so a lost browser acknowledgement cannot make the attempt appear retryable.
 - Never guess, search-synthesize, or borrow a series ID. Day 1 obtains it only from the verified series link above the public article title. Day 2–30 require verified bootstrap state.
 
 ## Stop immediately

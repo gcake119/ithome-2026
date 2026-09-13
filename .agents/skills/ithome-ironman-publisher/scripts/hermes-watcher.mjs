@@ -30,6 +30,13 @@ function notification(kind, event, details = {}) {
   return { kind, eventId: event?.eventId, operation: event?.operation, ...details };
 }
 
+function validArticleUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname === 'ithelp.ithome.com.tw' && /^\/articles\/[^/]+\/?$/.test(url.pathname);
+  } catch { return false; }
+}
+
 function auditNotifications(event) {
   if (event.status === 'complete') return [];
   if (event.status === 'failed') return [notification('audit_failed', event, { failure: event.failure })];
@@ -41,10 +48,17 @@ function auditNotifications(event) {
   return result;
 }
 
-function eventNotifications(event) {
+function eventNotifications(event, project) {
   if (event.operation === 'audit-drafts') return auditNotifications(event);
   if (event.operation === 'publish-day' && ['blocked', 'failed', 'uncertain'].includes(event.status)) {
     return [notification('publish_failed', event, { day: event.day, status: event.status, result: event.result })];
+  }
+  if (event.operation === 'publish-day' && event.status === 'verified' && !isVerifiedPublish(event, project)) {
+    return [notification('publish_failed', event, {
+      day: event.day,
+      status: event.status,
+      result: { reasonCode: 'verified_evidence_invalid' },
+    })];
   }
   if (event.operation === 'bootstrap-series' && event.status !== 'verified') {
     return [notification('bootstrap_failed', event, { status: event.status, failure: event.failure })];
@@ -52,16 +66,17 @@ function eventNotifications(event) {
   return [];
 }
 
-function isVerifiedPublish(event) {
+function isVerifiedPublish(event, project) {
+  const expectedCanonical = `${project.githubPages.publicUrl}/day/${String(event.day).padStart(2, '0')}/`;
   return event.operation === 'publish-day'
     && Number.isInteger(event.day) && event.day >= 1 && event.day <= 30
     && event.status === 'verified'
     && event.result?.reasonCode === 'published'
     && event.result?.publishClickCount === 1
     && event.result?.publicVerification === 'verified'
-    && typeof event.result?.articleUrl === 'string' && event.result.articleUrl !== ''
-    && typeof event.result?.title === 'string' && event.result.title !== ''
-    && typeof event.result?.canonicalUrl === 'string' && event.result.canonicalUrl !== '';
+    && validArticleUrl(event.result?.articleUrl)
+    && typeof event.result?.title === 'string' && event.result.title.trim() !== ''
+    && event.result?.canonicalUrl === expectedCanonical;
 }
 
 export function evaluateWatcher({ events, bootstrap, state = {}, now = new Date().toISOString(), checkpoint, maxAgeHours = DEFAULT_MAX_AGE_HOURS, project = loadProjectConfigSync() }) {
@@ -78,7 +93,7 @@ export function evaluateWatcher({ events, bootstrap, state = {}, now = new Date(
   const latestVerifiedPublishByDay = new Map();
 
   for (const event of events) {
-    if (!validEnvelope(event, project) || !isVerifiedPublish(event)) continue;
+    if (!validEnvelope(event, project) || !isVerifiedPublish(event, project)) continue;
     const previous = latestVerifiedPublishByDay.get(event.day);
     if (!previous || validDate(event.completedAt) > validDate(previous.completedAt)) {
       latestVerifiedPublishByDay.set(event.day, event);
@@ -101,8 +116,9 @@ export function evaluateWatcher({ events, bootstrap, state = {}, now = new Date(
     const ageHours = (nowMs - validDate(event.completedAt)) / 3_600_000;
     const laterVerified = event.operation === 'publish-day'
       && latestVerifiedPublishByDay.has(event.day)
-      && validDate(latestVerifiedPublishByDay.get(event.day).completedAt) > validDate(event.completedAt);
-    const abnormal = laterVerified ? [] : eventNotifications(event);
+      && latestVerifiedPublishByDay.get(event.day).eventId !== event.eventId
+      && validDate(latestVerifiedPublishByDay.get(event.day).completedAt) >= validDate(event.completedAt);
+    const abnormal = laterVerified ? [] : eventNotifications(event, project);
     if (ageHours > maxAgeHours) notifications.push(notification('stale_event', event, { ageHours: Math.floor(ageHours) }));
     else notifications.push(...abnormal);
     processed.add(event.eventId);

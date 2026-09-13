@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFile } from 'node:child_process';
-import { lstat, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { lstat, mkdtemp, open, readFile, rm, writeFile } from 'node:fs/promises';
 import { lstatSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
@@ -53,6 +53,35 @@ export function loadRunnerConfig(env) {
   };
 }
 
+export async function assertEventSinkWritable(eventDir) {
+  let probe;
+  try {
+    probe = await mkdtemp(join(eventDir, '.publisher-preflight-'));
+  } catch {
+    throw new Error('Event directory is not writable');
+  }
+  await rm(probe, { recursive: true, force: true });
+}
+
+export function createClickReceiptStore(eventDir) {
+  return async ({ day, fingerprint, runId }) => {
+    const receiptPath = join(eventDir, `.publish-click-day-${String(day).padStart(2, '0')}.receipt`);
+    let handle;
+    try {
+      handle = await open(receiptPath, 'wx', 0o640);
+      await handle.writeFile(`${JSON.stringify({ schemaVersion: 1, day, fingerprint, runId, recordedAt: new Date().toISOString() })}\n`, 'utf8');
+      await handle.sync();
+    } catch (error) {
+      if (error?.code === 'EEXIST') {
+        throw Object.assign(new Error('A publish click was already recorded for this Day'), { reasonCode: 'prior_publish_click_recorded' });
+      }
+      throw Object.assign(new Error('Cannot persist publish click receipt'), { reasonCode: 'click_receipt_write_failed' });
+    } finally {
+      await handle?.close();
+    }
+  };
+}
+
 async function loadVerifiedBootstrap(path) {
   let stat;
   try { stat = await lstat(path); } catch (error) {
@@ -83,6 +112,7 @@ async function createEventEmitter(config) {
 
 export async function runBrowserPublisher({ day, env = process.env }) {
   const config = loadRunnerConfig(env);
+  await assertEventSinkWritable(config.eventDir);
   const project = await loadProjectConfig({ requireInitialized: true });
   const driver = createPlaywrightIthomeDriver({
     config: {
@@ -100,6 +130,7 @@ export async function runBrowserPublisher({ day, env = process.env }) {
     expectedSeriesTitle: project.seriesTitle,
     expectedContestTag: project.contestTag,
     loadBootstrap: () => loadVerifiedBootstrap(config.bootstrapState),
+    recordClickDispatched: createClickReceiptStore(config.eventDir),
   });
   return runUnattendedPublisher({
     day,

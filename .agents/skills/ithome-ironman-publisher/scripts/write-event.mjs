@@ -70,7 +70,9 @@ function validate(event) {
     if (!event.result || !Number.isInteger(event.result.publishClickCount) || event.result.publishClickCount < 0 || event.result.publishClickCount > 1) errors.push("publishClickCountInvariant");
     if (event.status === "verified") {
       const expectedCanonical = `${project.githubPages.publicUrl}/day/${String(event.day).padStart(2, "0")}/`;
-      if (event.result?.publicVerification !== "verified"
+      if (event.result?.reasonCode !== "published"
+        || event.result?.publishClickCount !== 1
+        || event.result?.publicVerification !== "verified"
         || !validIthomeUrl(event.result?.articleUrl, /^\/articles\/[^/]+\/?$/)
         || typeof event.result?.title !== "string" || !event.result.title.trim()
         || event.result?.canonicalUrl !== expectedCanonical) errors.push("verifiedPublishEvidence");

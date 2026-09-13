@@ -111,6 +111,19 @@ describe('event contract', () => {
     expect(valid.status).toBe(0);
   });
 
+  test.each([
+    ['wrong reason', { reasonCode: 'test', publishClickCount: 1, publicVerification: 'verified', articleUrl: 'https://ithelp.ithome.com.tw/articles/123456', title: 'Day 12 test', canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/12/' }],
+    ['zero clicks', { reasonCode: 'published', publishClickCount: 0, publicVerification: 'verified', articleUrl: 'https://ithelp.ithome.com.tw/articles/123456', title: 'Day 12 test', canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/12/' }],
+  ])('rejects verified publish evidence with %s', (_label, resultData) => {
+    const eventDir = mkdtempSync(join(tmpdir(), 'ithome-events-'));
+    const result = run('write-event.mjs', {
+      ...common, eventId: 'verified-invalid', operation: 'publish-day', day: 12, status: 'verified', result: resultData,
+    }, { ITHOME_EVENT_DIR: eventDir });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('verifiedPublishEvidence');
+  });
+
   test('rejects event payloads containing forbidden secrets or article body', () => {
     const eventDir = mkdtempSync(join(tmpdir(), 'ithome-events-'));
     const result = run('write-event.mjs', {

@@ -62,7 +62,14 @@ describe('Hermes watcher decision engine', () => {
   });
 
   test('keeps verified publish evidence silent', () => {
-    const event = { ...common, eventId: 'publish-verified', operation: 'publish-day', day: 2, status: 'verified', result: { publicVerification: 'verified' } };
+    const event = {
+      ...common, eventId: 'publish-verified', operation: 'publish-day', day: 2, status: 'verified',
+      result: {
+        reasonCode: 'published', publishClickCount: 1, publicVerification: 'verified',
+        articleUrl: 'https://ithelp.ithome.com.tw/articles/day2', title: 'Day 2 title',
+        canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/02/',
+      },
+    };
     expect(evaluate([event]).notifications).toEqual([]);
   });
 
@@ -103,14 +110,60 @@ describe('Hermes watcher decision engine', () => {
     const verified = { ...common, eventId: 'publish-day3-verified', operation: 'publish-day', day: 3, status: 'verified', completedAt: '2026-09-01T10:55:00.000Z' };
     const uncertain = { ...common, eventId: 'publish-day3-uncertain', operation: 'publish-day', day: 3, status: 'uncertain', completedAt: '2026-09-01T10:57:00.000Z', result: { reasonCode: 'post_publish_unverified' } };
 
-    expect(evaluate([uncertain, verified]).notifications).toMatchObject([{ kind: 'publish_failed', day: 3, status: 'uncertain' }]);
+    expect(evaluate([uncertain, verified]).notifications).toMatchObject([
+      { kind: 'publish_failed', day: 3, status: 'uncertain' },
+      { kind: 'publish_failed', day: 3, status: 'verified', result: { reasonCode: 'verified_evidence_invalid' } },
+    ]);
   });
 
   test('does not let malformed verified evidence suppress an earlier anomaly', () => {
     const uncertain = { ...common, eventId: 'publish-day3-uncertain', operation: 'publish-day', day: 3, status: 'uncertain', completedAt: '2026-09-01T10:55:00.000Z', result: { reasonCode: 'post_publish_unverified' } };
     const malformedVerified = { ...common, eventId: 'publish-day3-malformed', operation: 'publish-day', day: 3, status: 'verified', completedAt: '2026-09-01T10:57:00.000Z', result: { publicVerification: 'verified' } };
 
-    expect(evaluate([uncertain, malformedVerified]).notifications).toMatchObject([{ kind: 'publish_failed', day: 3, status: 'uncertain' }]);
+    expect(evaluate([uncertain, malformedVerified]).notifications).toMatchObject([
+      { kind: 'publish_failed', day: 3, status: 'uncertain' },
+      { kind: 'publish_failed', day: 3, status: 'verified', result: { reasonCode: 'verified_evidence_invalid' } },
+    ]);
+  });
+
+  test('does not let a foreign article URL suppress an earlier anomaly', () => {
+    const uncertain = { ...common, eventId: 'foreign-url-uncertain', operation: 'publish-day', day: 3, status: 'uncertain', result: { reasonCode: 'post_publish_unverified' } };
+    const foreignVerified = {
+      ...common,
+      eventId: 'foreign-url-verified',
+      operation: 'publish-day',
+      day: 3,
+      status: 'verified',
+      completedAt: '2026-09-01T10:57:00.000Z',
+      result: {
+        reasonCode: 'published', publishClickCount: 1, publicVerification: 'verified',
+        articleUrl: 'https://example.com/articles/day3', title: 'Day 3 title',
+        canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/03/',
+      },
+    };
+
+    expect(evaluate([uncertain, foreignVerified]).notifications).toMatchObject([
+      { kind: 'publish_failed', status: 'uncertain' },
+      { kind: 'publish_failed', status: 'verified', result: { reasonCode: 'verified_evidence_invalid' } },
+    ]);
+  });
+
+  test('lets complete verified evidence supersede an abnormal event with the same timestamp', () => {
+    const uncertain = { ...common, eventId: 'same-time-uncertain', operation: 'publish-day', day: 3, status: 'uncertain', result: { reasonCode: 'post_publish_unverified' } };
+    const verified = {
+      ...common,
+      eventId: 'same-time-verified',
+      operation: 'publish-day',
+      day: 3,
+      status: 'verified',
+      result: {
+        reasonCode: 'published', publishClickCount: 1, publicVerification: 'verified',
+        articleUrl: 'https://ithelp.ithome.com.tw/articles/day3', title: 'Day 3 title',
+        canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/03/',
+      },
+    };
+
+    expect(evaluate([uncertain, verified]).notifications).toEqual([]);
   });
 
   test('reports stale abnormal evidence separately instead of presenting it as current', () => {

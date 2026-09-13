@@ -41,6 +41,23 @@ function abnormalResult(reasonCode, publishClickCount = 0, publicVerification = 
   return { reasonCode, publishClickCount, publicVerification };
 }
 
+function validArticleUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname === 'ithelp.ithome.com.tw' && /^\/articles\/[^/]+\/?$/.test(url.pathname);
+  } catch { return false; }
+}
+
+function validVerifiedOutcome(outcome, payload) {
+  return outcome?.status === 'verified'
+    && outcome.result?.reasonCode === 'published'
+    && outcome.result?.publishClickCount === 1
+    && outcome.result?.publicVerification === 'verified'
+    && validArticleUrl(outcome.result?.articleUrl)
+    && outcome.result?.title === payload.title
+    && outcome.result?.canonicalUrl === payload.canonicalUrl;
+}
+
 async function complete(result, event, emit) {
   try {
     await emit(event);
@@ -92,6 +109,12 @@ export async function runUnattendedPublisher({ day, prepare, publish, emit, proj
     outcome = {
       status: 'uncertain',
       result: abnormalResult('driver_payload_stale', outcome?.result?.publishClickCount ?? 0, outcome?.result?.publicVerification ?? 'uncertain'),
+    };
+  } else if (outcome.status === 'verified' && !validVerifiedOutcome(outcome, payload)) {
+    outcome = {
+      status: 'uncertain',
+      fingerprint: expectedFingerprint,
+      result: abnormalResult('driver_contract_invalid', outcome.result?.publishClickCount ?? 0, 'uncertain'),
     };
   }
 

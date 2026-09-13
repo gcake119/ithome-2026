@@ -185,7 +185,7 @@ export function createPlaywrightIthomeDriver({ chromiumImpl = chromium, config }
       };
     },
 
-    async publishOnce({ payload }) {
+    async publishOnce({ payload, markClickDispatched }) {
       const activePage = requirePage();
       const titleField = activePage.locator('input[placeholder*="好標題"]:visible');
       const bodyEditor = activePage.locator('.CodeMirror-code:visible');
@@ -205,6 +205,8 @@ export function createPlaywrightIthomeDriver({ chromiumImpl = chromium, config }
       if (await exactVisibleCount(publishAction) !== 1) throw reasonError('publish_control_ambiguous');
       const deleteAction = activePage.getByText('刪除草稿', { exact: true });
       if (await exactVisibleCount(deleteAction) !== 1) throw reasonError('publish_menu_unverified');
+      if (typeof markClickDispatched !== 'function') throw reasonError('publish_click_untracked');
+      await markClickDispatched();
       await publishAction.click({ timeout: 10_000, noWaitAfter: true });
       return { clicked: true };
     },
@@ -219,7 +221,8 @@ export function createPlaywrightIthomeDriver({ chromiumImpl = chromium, config }
         await navigate(activePage, entries[0].url);
       }
       const text = await bodyText(activePage);
-      if (blockedBy(text)) return { verified: false };
+      const antiAutomation = blockedBy(text);
+      if (antiAutomation) throw reasonError(antiAutomation);
       const titleCount = await activePage.getByText(payload.title, { exact: true }).count();
       const canonicalCount = await activePage.locator(`a[href="${payload.canonicalUrl}"]`).count();
       return { verified: titleCount > 0 && canonicalCount > 0, articleUrl: activePage.url() };

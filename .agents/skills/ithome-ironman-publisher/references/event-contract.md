@@ -94,4 +94,8 @@ A `verified` publish event must additionally carry the minimum public identity n
 
 These fields are public metadata, not article content. They let Hermes verify the latest series entry and canonical link without reading the repository Markdown or receiving an iThome session.
 
+A `verified` status missing any of these fields is invalid evidence. The unattended runner must convert it to an abnormal result instead of remaining silent, and Hermes must notify if malformed verified evidence reaches the event directory. A later complete verified event may supersede an earlier same-Day anomaly even when both timestamps have only second-level precision.
+
 Never include body, cookies, session state, Telegram credentials, screenshots, HTML dumps, or secrets. Use `scripts/write-event.mjs --input <event.json>` only after `ITHOME_EVENT_DIR` is configured. It validates and atomically writes; it never sends Telegram or configures Hermes.
+
+The unattended browser entrypoint may also keep a hidden `.publish-click-day-NN.receipt` file in the configured event directory. This is a local one-click interlock rather than a Hermes event; the watcher ignores it because it does not end in `.json`. It contains only Day, run ID, payload fingerprint, and recording time, and must be created exclusively before the DOM click.
