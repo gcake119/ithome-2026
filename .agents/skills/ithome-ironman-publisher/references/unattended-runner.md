@@ -41,6 +41,8 @@ The driver refuses non-loopback CDP endpoints and non-iThome workflow URLs. An o
 
 For interactive login or anti-automation recovery, run `examples/macos/open-login-chrome.zsh` with the same `ITHOME_CHROME_PROFILE`, `ITHOME_DRAFTS_URL`, and optional `ITHOME_CDP_PORT` used by the scheduled runner. This opens the isolated publisher profile in a visible Chrome window without invoking the publisher or clicking publish. Finish login or the browser challenge manually, then leave that profile available for the next scheduled preflight. Do not substitute the everyday default Chrome profile.
 
+For scheduled cold-start reliability, install the separate `examples/macos/com.example.ithome-ironman-prewarm.plist` at 09:25 and keep the publisher at 09:30. Its `prewarm-browser.zsh` only makes the dedicated visible Chrome／CDP profile ready; it does not inspect article content, invoke the publisher, emit a success event, or click publish. Cloudflare and login gates still belong to the fresh 09:30 publisher preflight and remain fail-closed.
+
 ## Current readiness
 
 The decision core, Playwright browser adapter, scheduled Day lookup, and event／watcher contracts are repository-controlled and covered by tests. Reusable macOS wrapper and LaunchAgent examples are available under `examples/macos/`.
