@@ -37,8 +37,38 @@ function eventEnvelope({ day, status, result, completedAt, runId, project }) {
   };
 }
 
+const PHASE_BY_REASON = new Map([
+  ['payload_missing', 'payload_preflight'],
+  ['payload_failed', 'payload_preflight'],
+  ['payload_mismatch', 'payload_preflight'],
+  ['series_bootstrap_missing', 'bootstrap_preflight'],
+  ['series_bootstrap_invalid', 'bootstrap_preflight'],
+  ['anti_automation', 'browser_session'],
+  ['login_required', 'browser_session'],
+  ['unexpected_account', 'browser_session'],
+  ['browser_driver_failed', 'browser_connection'],
+  ['driver_failed', 'browser_connection'],
+  ['draft_scan_incomplete', 'draft_audit'],
+  ['draft_missing', 'draft_audit'],
+  ['draft_duplicate', 'draft_audit'],
+  ['draft_mismatch', 'draft_audit'],
+  ['public_scan_incomplete', 'public_audit'],
+  ['already_published', 'public_audit'],
+  ['prior_publish_click_recorded', 'publish_interlock'],
+  ['click_receipt_write_failed', 'publish_interlock'],
+  ['publish_not_clicked', 'publish_click'],
+  ['publish_click_untracked', 'publish_click'],
+  ['post_publish_unverified', 'public_verification'],
+  ['driver_payload_stale', 'result_validation'],
+  ['driver_contract_invalid', 'result_validation'],
+]);
+
+function phaseFor(reasonCode) {
+  return PHASE_BY_REASON.get(reasonCode) ?? 'unknown';
+}
+
 function abnormalResult(reasonCode, publishClickCount = 0, publicVerification = 'not_started') {
-  return { reasonCode, publishClickCount, publicVerification };
+  return { reasonCode, phase: phaseFor(reasonCode), publishClickCount, publicVerification };
 }
 
 function validArticleUrl(value) {
@@ -116,6 +146,10 @@ export async function runUnattendedPublisher({ day, prepare, publish, emit, proj
       fingerprint: expectedFingerprint,
       result: abnormalResult('driver_contract_invalid', outcome.result?.publishClickCount ?? 0, 'uncertain'),
     };
+  }
+
+  if (outcome.status !== 'verified' && typeof outcome.result.phase !== 'string') {
+    outcome.result = { ...outcome.result, phase: phaseFor(outcome.result.reasonCode) };
   }
 
   const silent = outcome.status === 'verified';

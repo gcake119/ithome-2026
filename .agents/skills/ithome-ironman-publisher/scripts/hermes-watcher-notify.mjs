@@ -8,6 +8,24 @@ function day(value) {
   return `Day ${String(value).padStart(2, '0')}`;
 }
 
+const PHASE_LABELS = Object.freeze({
+  payload_preflight: '文章資料準備',
+  bootstrap_preflight: '系列身分檢查',
+  browser_connection: '瀏覽器啟動與連線',
+  browser_session: '登入與反自動化檢查',
+  draft_audit: '草稿檢查',
+  public_audit: '公開文章重複檢查',
+  publish_interlock: '單次發文安全鎖',
+  publish_click: '發文動作',
+  public_verification: '發文後公開驗證',
+  result_validation: '發布結果驗證',
+  unknown: '未知階段',
+});
+
+function phaseLabel(value) {
+  return PHASE_LABELS[value] ?? PHASE_LABELS.unknown;
+}
+
 function formatOne(item) {
   if (item.kind === 'publication_reminder') return `鐵人賽發文提醒：今天應發布 ${day(item.day)}（${item.date}）。`;
   if (['public_article_missing', 'public_article_not_latest', 'public_article_mismatch'].includes(item.kind)) return `鐵人賽發文提醒：目前尚未偵測到 ${day(item.day)}（${item.date ?? '日期未提供'}）的公開文章。`;
@@ -20,7 +38,7 @@ function formatOne(item) {
   if (item.kind === 'audit_duplicate') return `iThome 草稿盤點異常：${item.entries.map((entry) => `${day(entry.day)} 有 ${entry.count} 份重複草稿`).join('；')}，未自動刪除。`;
   if (item.kind === 'audit_mismatch') return `iThome 草稿盤點異常：${item.entries.map((entry) => `${day(entry.day)} 的 ${entry.fields.join('、')} 不一致`).join('；')}，未自動覆寫。`;
   if (item.kind === 'audit_failed') return `iThome 草稿盤點失敗：${item.failure?.reasonCode ?? 'unknown'}，請查看 Codex audit log。`;
-  if (item.kind === 'publish_failed') return `iThome ${day(item.day)} 發布結果異常：${item.status}／${item.result?.reasonCode ?? 'unknown'}，請人工確認。`;
+  if (item.kind === 'publish_failed') return `iThome ${day(item.day)} 發布失敗階段：${phaseLabel(item.result?.phase)}；結果：${item.status}／${item.result?.reasonCode ?? 'unknown'}，請人工確認。`;
   if (item.kind === 'bootstrap_failed') return `iThome Day 1 bootstrap 異常：${item.status}／${item.failure?.reasonCode ?? 'unknown'}，請人工確認。`;
   if (item.kind === 'bootstrap_missing') return `iThome Day 1 ${item.checkpoint === 'day1-2230' ? '22:30' : '19:00'} 尚無有效 verified bootstrap state，請人工確認。`;
   if (item.kind === 'bootstrap_recovered') return 'iThome Day 1 verified bootstrap state 已就緒，公開系列頁 watchdog 可以開始監控。';

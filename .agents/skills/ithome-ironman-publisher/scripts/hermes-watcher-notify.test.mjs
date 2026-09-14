@@ -40,6 +40,15 @@ describe('Hermes watcher Telegram formatter', () => {
       .toBe('iThome 發布證據不足：尚未收到 Day 02（2026-09-10）的 verified 發布結果，無法判定公開文章是否正確，請人工確認。');
   });
 
+  test('names the exact formal publish phase in an abnormal notification', () => {
+    expect(formatNotifications([{
+      kind: 'publish_failed',
+      day: 6,
+      status: 'blocked',
+      result: { reasonCode: 'anti_automation', phase: 'browser_session' },
+    }])).toBe('iThome Day 06 發布失敗階段：登入與反自動化檢查；結果：blocked／anti_automation，請人工確認。');
+  });
+
   test('formats GitHub Pages missing, mismatch, and unavailable results', () => {
     expect(formatNotifications([{ kind: 'github_pages_missing', day: 2, date: '2026-09-10' }]))
       .toBe('GitHub Pages 發布異常：Day 02（2026-09-10）頁面仍是 404。');

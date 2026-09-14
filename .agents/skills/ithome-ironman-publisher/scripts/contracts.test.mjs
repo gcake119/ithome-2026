@@ -63,7 +63,7 @@ describe('event contract', () => {
       operation: 'publish-day',
       day: 12,
       status: 'uncertain',
-      result: { reasonCode: 'navigation_timeout', publishClickCount: 1, publicVerification: 'uncertain' },
+      result: { reasonCode: 'navigation_timeout', phase: 'public_verification', publishClickCount: 1, publicVerification: 'uncertain' },
     }, { ITHOME_EVENT_DIR: eventDir });
     expect(publish.status).toBe(0);
   });
@@ -189,7 +189,7 @@ describe('event contract', () => {
       operation: 'publish-day',
       day: 12,
       status: 'blocked',
-      result: { reasonCode: 'draft_missing', publishClickCount: 0, publicVerification: 'not_started' },
+      result: { reasonCode: 'draft_missing', phase: 'draft_audit', publishClickCount: 0, publicVerification: 'not_started' },
     }, { ITHOME_EVENT_DIR: linkDir });
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('direct directory');

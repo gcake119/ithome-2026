@@ -32,18 +32,10 @@ describe('macOS unattended publisher examples', () => {
     expect(plist).not.toMatch(/\/Users\/[A-Za-z0-9._-]+/);
   });
 
-  test('provides a separate visible 09:25 browser prewarm without invoking the publisher', async () => {
-    const script = await readFile(new URL('prewarm-browser.zsh', exampleRoot), 'utf8');
-    const plist = await readFile(new URL('com.example.ithome-ironman-prewarm.plist', exampleRoot), 'utf8');
-
-    expect(script).toContain('--remote-debugging-address=127.0.0.1');
-    expect(script).toContain('--user-data-dir=$ITHOME_CHROME_PROFILE');
-    expect(script).toContain('--new-window');
-    expect(script).not.toContain('run-scheduled-browser-publisher.mjs');
-    expect(plist).toContain('<key>Hour</key><integer>9</integer>');
-    expect(plist).toContain('<key>Minute</key><integer>25</integer>');
-    expect(plist).toContain('__PREWARM_SCRIPT__');
-    expect(script).not.toMatch(/\/Users\/[A-Za-z0-9._-]+/);
-    expect(plist).not.toMatch(/\/Users\/[A-Za-z0-9._-]+/);
+  test('keeps browser startup inside the formal publisher and still enters the event-emitting runner', async () => {
+    const script = await readFile(new URL('run-publisher.zsh', exampleRoot), 'utf8');
+    expect(script).toContain("open -na 'Google Chrome'");
+    expect(script).toContain('run-scheduled-browser-publisher.mjs');
+    expect(script).not.toMatch(/json\/version" >\/dev\/null \|\| exit 1/);
   });
 });

@@ -41,7 +41,9 @@ The driver refuses non-loopback CDP endpoints and non-iThome workflow URLs. An o
 
 For interactive login or anti-automation recovery, run `examples/macos/open-login-chrome.zsh` with the same `ITHOME_CHROME_PROFILE`, `ITHOME_DRAFTS_URL`, and optional `ITHOME_CDP_PORT` used by the scheduled runner. This opens the isolated publisher profile in a visible Chrome window without invoking the publisher or clicking publish. Finish login or the browser challenge manually, then leave that profile available for the next scheduled preflight. Do not substitute the everyday default Chrome profile.
 
-For scheduled cold-start reliability, install the separate `examples/macos/com.example.ithome-ironman-prewarm.plist` at 09:25 and keep the publisher at 09:30. Its `prewarm-browser.zsh` only makes the dedicated visible Chrome／CDP profile ready; it does not inspect article content, invoke the publisher, emit a success event, or click publish. Cloudflare and login gates still belong to the fresh 09:30 publisher preflight and remain fail-closed.
+The scheduled publisher owns its complete cold-start path at 09:30: start the dedicated visible Chrome profile when needed, wait a bounded time for CDP, and always continue into the runner so a startup／connection failure becomes a machine-readable event. The same run then checks Cloudflare, login, account, draft, public duplicate state, publish interlock, the single click, and public verification. Do not install a separate prewarm schedule; it creates a second success signal that does not prove publish readiness.
+
+Every abnormal publish result carries a `result.phase`. Hermes includes the human-readable phase and `reasonCode` in its notification. Browser startup and connection failures must not terminate only in the shell wrapper, because that would bypass event emission.
 
 ## Current readiness
 

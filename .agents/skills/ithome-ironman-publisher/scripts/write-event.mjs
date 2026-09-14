@@ -68,6 +68,7 @@ function validate(event) {
     if (!Number.isInteger(event.day) || event.day < 1 || event.day > 30) errors.push("day");
     if (!["verified", "blocked", "failed", "uncertain", "cancelled"].includes(event.status)) errors.push("status");
     if (!event.result || !Number.isInteger(event.result.publishClickCount) || event.result.publishClickCount < 0 || event.result.publishClickCount > 1) errors.push("publishClickCountInvariant");
+    if (event.status !== "verified" && (typeof event.result?.phase !== "string" || !event.result.phase)) errors.push("publishFailurePhase");
     if (event.status === "verified") {
       const expectedCanonical = `${project.githubPages.publicUrl}/day/${String(event.day).padStart(2, "0")}/`;
       if (event.result?.reasonCode !== "published"

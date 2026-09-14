@@ -38,6 +38,7 @@ if ! /usr/bin/curl --fail --silent "$endpoint/json/version" >/dev/null; then
   done
 fi
 
-/usr/bin/curl --fail --silent "$endpoint/json/version" >/dev/null || exit 1
+# Always enter the runner so browser startup／connection failures become a
+# machine-readable publish event that Hermes can notify.
 exec /usr/bin/env node \
   "$ITHOME_PUBLISHER_REPO/.agents/skills/ithome-ironman-publisher/scripts/run-scheduled-browser-publisher.mjs"

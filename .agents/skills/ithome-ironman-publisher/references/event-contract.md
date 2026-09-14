@@ -69,6 +69,7 @@ Audit statuses are `complete`, `incomplete`, `conflict`, or `failed`. Duplicate 
   "runId": "publish-...",
   "result": {
     "reasonCode": "draft_missing",
+    "phase": "draft_audit",
     "publishClickCount": 0,
     "publicVerification": "not_started"
   }
@@ -76,6 +77,8 @@ Audit statuses are `complete`, `incomplete`, `conflict`, or `failed`. Duplicate 
 ```
 
 Publish statuses are `verified`, `blocked`, `failed`, `uncertain`, or `cancelled`.
+
+Every non-`verified` publish event requires `result.phase`, identifying the failed step without including page content. Supported phases are `payload_preflight`, `bootstrap_preflight`, `browser_connection`, `browser_session`, `draft_audit`, `public_audit`, `publish_interlock`, `publish_click`, `public_verification`, `result_validation`, and `unknown`.
 
 A `verified` publish event must additionally carry the minimum public identity needed by the read-only Hermes watchdog:
 
