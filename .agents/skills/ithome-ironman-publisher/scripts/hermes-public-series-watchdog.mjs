@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 import { randomUUID } from 'node:crypto';
-import { closeSync, constants, fsyncSync, lstatSync, openSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { closeSync, constants, fsyncSync, lstatSync, openSync, readFileSync, readSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 
-import { loadProjectConfigSync } from '../../../../scripts/ithome/config.mjs';
+import { loadProjectConfigSync, REPO_ROOT } from '../../../../scripts/ithome/config.mjs';
 import { validateBootstrapState } from './validate-bootstrap-state.mjs';
 import { isDirectExecution } from './cli-entrypoint.mjs';
 
@@ -78,30 +78,84 @@ function exactUrl(value) {
   } catch { return null; }
 }
 
+function comparableTitle(value) {
+  return value.replace(/["'“”‘’「」『』]/gu, '');
+}
+
+export function readScheduledMetadata(scheduled, project, postsDirectory = resolve(REPO_ROOT, 'src/content/ironman')) {
+  if (!Number.isInteger(scheduled?.day) || !/^\d{4}-\d{2}-\d{2}$/.test(scheduled?.date ?? '')) {
+    throw new Error('Scheduled Day metadata is invalid');
+  }
+  const dayString = String(scheduled.day).padStart(2, '0');
+  const path = resolve(postsDirectory, `day-${dayString}.md`);
+  const stat = lstatSync(path);
+  if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('Scheduled article source must be a direct regular file');
+
+  const buffer = Buffer.alloc(8_192);
+  const fd = openSync(path, constants.O_RDONLY);
+  let bytesRead;
+  try { bytesRead = readSync(fd, buffer, 0, buffer.length, 0); }
+  finally { closeSync(fd); }
+  const prefix = buffer.subarray(0, bytesRead).toString('utf8');
+  if (!prefix.startsWith('---\n')) throw new Error('Scheduled article frontmatter is missing');
+  const end = prefix.indexOf('\n---\n', 4);
+  if (end === -1) throw new Error('Scheduled article frontmatter exceeds the safe read boundary');
+  const metadata = {};
+  for (const line of prefix.slice(4, end).split('\n')) {
+    const match = line.match(/^([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$/);
+    if (match) metadata[match[1]] = match[2].trim().replace(/^['"]|['"]$/g, '');
+  }
+  if (Number(metadata.day) !== scheduled.day || metadata.publishDate !== scheduled.date || !metadata.title) {
+    throw new Error('Scheduled article frontmatter does not match the configured schedule');
+  }
+  return {
+    day: scheduled.day,
+    date: scheduled.date,
+    title: metadata.title,
+    canonicalUrl: `${project.githubPages.publicUrl}/day/${dayString}/`,
+  };
+}
+
+function resolvePublicEntry(expected, bootstrap, seriesHtml) {
+  const base = { day: expected?.day, date: expected?.date, articleUrl: expected?.articleUrl };
+  const links = articleLinks(seriesHtml, bootstrap.seriesUrl);
+  if (links === null) return { error: { status: 'failed', notifications: [{ kind: 'public_watchdog_unavailable', ...base, reasonCode: 'series_content_unrecognized' }] } };
+
+  let entry;
+  if (expected.articleUrl !== undefined) {
+    const expectedUrl = exactUrl(expected.articleUrl);
+    if (!expectedUrl) return { error: { status: 'failed', notifications: [{ kind: 'public_watchdog_blocked', ...base, reasonCode: 'verified_publish_evidence_invalid' }] } };
+    entry = links.find((item) => item.url === expectedUrl);
+  } else {
+    const expectedTitle = comparableTitle(expected.title);
+    const matches = links.filter((item) => comparableTitle(item.title) === expectedTitle);
+    if (matches.length > 1) return { error: { status: 'failed', notifications: [{ kind: 'public_watchdog_blocked', ...base, reasonCode: 'public_article_ambiguous' }] } };
+    [entry] = matches;
+  }
+  if (!entry) return { error: { status: 'failed', notifications: [{ kind: 'public_article_missing', ...base }] } };
+  const resolvedBase = { ...base, articleUrl: entry.url };
+  if (links.at(-1)?.url !== entry.url) return { error: { status: 'failed', notifications: [{ kind: 'public_article_not_latest', ...resolvedBase, latestArticleUrl: links.at(-1)?.url }] } };
+  return { entry, base: resolvedBase };
+}
+
 export function evaluatePublicSeries({ expected, bootstrap, seriesHtml, articleHtml }) {
   const base = { day: expected?.day, date: expected?.date, articleUrl: expected?.articleUrl };
   if (!bootstrap?.seriesUrl || !bootstrap?.seriesId) {
     return { status: 'failed', notifications: [{ kind: 'public_watchdog_blocked', ...base, reasonCode: 'bootstrap_invalid' }] };
   }
-  const expectedUrl = exactUrl(expected?.articleUrl);
-  if (!Number.isInteger(expected?.day) || !expectedUrl || !expected?.title || !expected?.canonicalUrl) {
+  if (!Number.isInteger(expected?.day) || !expected?.title || !expected?.canonicalUrl) {
     return { status: 'failed', notifications: [{ kind: 'public_watchdog_blocked', ...base, reasonCode: 'verified_publish_evidence_invalid' }] };
   }
-
-  const links = articleLinks(seriesHtml, bootstrap.seriesUrl);
-  if (links === null) {
-    return { status: 'failed', notifications: [{ kind: 'public_watchdog_unavailable', ...base, reasonCode: 'series_content_unrecognized' }] };
-  }
-  const entry = links.find((item) => item.url === expectedUrl);
-  if (!entry) return { status: 'failed', notifications: [{ kind: 'public_article_missing', ...base }] };
-  if (links.at(-1)?.url !== expectedUrl) return { status: 'failed', notifications: [{ kind: 'public_article_not_latest', ...base, latestArticleUrl: links.at(-1)?.url }] };
+  const resolved = resolvePublicEntry(expected, bootstrap, seriesHtml);
+  if (resolved.error) return resolved.error;
+  const { entry } = resolved;
 
   const fields = [];
-  if (entry.title !== expected.title) fields.push('title');
+  if (comparableTitle(entry.title) !== comparableTitle(expected.title)) fields.push('title');
   if (!articleHtml.includes(expected.canonicalUrl)) fields.push('canonicalUrl');
   if (expected.date && !articleHtml.includes(expected.date)) fields.push('publishedDate');
-  if (fields.length) return { status: 'failed', notifications: [{ kind: 'public_article_mismatch', ...base, fields }] };
-  return { status: 'verified', notifications: [], articleUrl: expected.articleUrl };
+  if (fields.length) return { status: 'failed', notifications: [{ kind: 'public_article_mismatch', ...resolved.base, fields }] };
+  return { status: 'verified', notifications: [], articleUrl: entry.url };
 }
 
 function readJson(path, { optional = false } = {}) {
@@ -232,17 +286,20 @@ async function main(argv) {
       const events = readEvents(resolve(options.events));
       const candidates = events.filter((event) => event.operation === 'publish-day' && event.day === scheduled.day && event.status === 'verified');
       const event = candidates.sort((a, b) => Date.parse(b.completedAt) - Date.parse(a.completedAt))[0];
-      const expected = event?.result && { day: event.day, date, title: event.result.title, articleUrl: event.result.articleUrl, canonicalUrl: event.result.canonicalUrl };
-      if (!event || event.result.publicVerification !== 'verified') {
-        result = { status: 'failed', notifications: [{ kind: 'public_publish_event_missing', day: scheduled.day, date }] };
-      } else {
-        try {
-          const seriesHtml = await fetchLatestSeriesPage(bootstrap.seriesUrl);
-          const articleHtml = expected?.articleUrl ? await fetchWithRetry(expected.articleUrl) : '';
-          result = evaluatePublicSeries({ expected, bootstrap, seriesHtml, articleHtml });
-        } catch (error) {
-          result = { status: 'failed', notifications: [{ kind: 'public_watchdog_unavailable', day: scheduled.day, reasonCode: error.message }] };
+      let expected;
+      try {
+        expected = event?.result?.publicVerification === 'verified'
+          ? { day: event.day, date, title: event.result.title, articleUrl: event.result.articleUrl, canonicalUrl: event.result.canonicalUrl }
+          : readScheduledMetadata(scheduled, project);
+        const seriesHtml = await fetchLatestSeriesPage(bootstrap.seriesUrl);
+        const resolved = resolvePublicEntry(expected, bootstrap, seriesHtml);
+        if (resolved.error) result = resolved.error;
+        else {
+          const articleHtml = await fetchWithRetry(resolved.entry.url);
+          result = evaluatePublicSeries({ expected: { ...expected, articleUrl: resolved.entry.url }, bootstrap, seriesHtml, articleHtml });
         }
+      } catch (error) {
+        result = { status: 'failed', notifications: [{ kind: 'public_watchdog_unavailable', day: scheduled.day, reasonCode: error.message }] };
       }
     }
   }

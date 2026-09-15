@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 
 import { describe, expect, test } from 'vitest';
 
-import { evaluatePublicSeries, fetchLatestSeriesPage, fetchWithRetry, publicationReminder } from './hermes-public-series-watchdog.mjs';
+import { evaluatePublicSeries, fetchLatestSeriesPage, fetchWithRetry, publicationReminder, readScheduledMetadata } from './hermes-public-series-watchdog.mjs';
 
 const execFileAsync = promisify(execFile);
 const watchdogPath = fileURLToPath(new URL('./hermes-public-series-watchdog.mjs', import.meta.url));
@@ -72,6 +72,79 @@ describe('Hermes public series watchdog', () => {
       notifications: [],
       articleUrl: expected.articleUrl,
     });
+  });
+
+  test('verifies a manually published latest article without a verified-event article URL', () => {
+    const metadataOnly = { day: expected.day, date: expected.date, title: expected.title, canonicalUrl: expected.canonicalUrl };
+
+    expect(evaluatePublicSeries({ expected: metadataOnly, bootstrap, seriesHtml, articleHtml })).toEqual({
+      status: 'verified',
+      notifications: [],
+      articleUrl: expected.articleUrl,
+    });
+  });
+
+  test('accepts iThome title normalization that removes quotation marks', () => {
+    const quotedTitle = { ...expected, articleUrl: undefined, title: 'Day 12｜一句「平常都這樣做」，後面藏了多少事情？' };
+    const normalizedSeriesHtml = '<main><a href="/articles/123456">Day 12｜一句平常都這樣做，後面藏了多少事情？</a></main>';
+
+    expect(evaluatePublicSeries({ expected: quotedTitle, bootstrap, seriesHtml: normalizedSeriesHtml, articleHtml })).toEqual({
+      status: 'verified',
+      notifications: [],
+      articleUrl: expected.articleUrl,
+    });
+  });
+
+  test('fails closed when quotation-normalized title discovery is ambiguous', () => {
+    const quotedTitle = { ...expected, articleUrl: undefined, title: 'Day 12｜一句「平常都這樣做」，後面藏了多少事情？' };
+    const duplicateNormalizedTitles = `<main>
+      <a href="/articles/123456">Day 12｜一句平常都這樣做，後面藏了多少事情？</a>
+      <a href="/articles/999999">Day 12｜一句「平常都這樣做」，後面藏了多少事情？</a>
+    </main>`;
+
+    expect(evaluatePublicSeries({ expected: quotedTitle, bootstrap, seriesHtml: duplicateNormalizedTitles, articleHtml })).toMatchObject({
+      status: 'failed',
+      notifications: [{ kind: 'public_watchdog_blocked', reasonCode: 'public_article_ambiguous' }],
+    });
+  });
+
+  test('fails closed when metadata-only discovery finds duplicate exact titles', () => {
+    const metadataOnly = { day: expected.day, date: expected.date, title: expected.title, canonicalUrl: expected.canonicalUrl };
+    const duplicateTitles = `<main>
+      <a href="/articles/123456">Day 12 test</a>
+      <a href="/articles/999999">Day 12 test</a>
+    </main>`;
+
+    expect(evaluatePublicSeries({ expected: metadataOnly, bootstrap, seriesHtml: duplicateTitles, articleHtml })).toMatchObject({
+      status: 'failed',
+      notifications: [{ kind: 'public_watchdog_blocked', reasonCode: 'public_article_ambiguous' }],
+    });
+  });
+
+  test('reads only scheduled frontmatter metadata for manual-publication recovery', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'ithome-metadata-'));
+    writeFileSync(join(directory, 'day-12.md'), [
+      '---',
+      'title: "Day 12 test"',
+      'day: 12',
+      'publishDate: 2026-09-12',
+      '---',
+      '',
+      'private fixture body must not be returned',
+    ].join('\n'));
+
+    try {
+      expect(readScheduledMetadata({ day: 12, date: '2026-09-12' }, {
+        githubPages: { publicUrl: 'https://gcake119.github.io/ithome-2026' },
+      }, directory)).toEqual({
+        day: 12,
+        date: '2026-09-12',
+        title: 'Day 12 test',
+        canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/12/',
+      });
+    } finally {
+      rmSync(directory, { recursive: true });
+    }
   });
 
   test('ignores unrelated article links outside the series main content', () => {
