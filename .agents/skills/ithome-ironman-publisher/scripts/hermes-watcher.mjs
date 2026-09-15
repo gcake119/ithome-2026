@@ -79,6 +79,15 @@ function isVerifiedPublish(event, project) {
     && event.result?.canonicalUrl === expectedCanonical;
 }
 
+function isSupersededByVerified(event, verified) {
+  if (!verified || verified.eventId === event.eventId) return false;
+  if (validDate(verified.completedAt) >= validDate(event.completedAt)) return true;
+  return event.status === 'blocked'
+    && event.result?.reasonCode === 'draft_missing'
+    && event.result?.publishClickCount === 0
+    && event.result?.publicVerification === 'not_started';
+}
+
 export function evaluateWatcher({ events, bootstrap, state = {}, now = new Date().toISOString(), checkpoint, maxAgeHours = DEFAULT_MAX_AGE_HOURS, project = loadProjectConfigSync() }) {
   if (!Array.isArray(events)) throw new Error('events must be an array');
   if (checkpoint !== undefined && !CHECKPOINTS.has(checkpoint)) throw new Error('checkpoint must be day1-1900 or day1-2230');
@@ -114,12 +123,10 @@ export function evaluateWatcher({ events, bootstrap, state = {}, now = new Date(
     if (processed.has(event.eventId)) continue;
 
     const ageHours = (nowMs - validDate(event.completedAt)) / 3_600_000;
-    const laterVerified = event.operation === 'publish-day'
-      && latestVerifiedPublishByDay.has(event.day)
-      && latestVerifiedPublishByDay.get(event.day).eventId !== event.eventId
-      && validDate(latestVerifiedPublishByDay.get(event.day).completedAt) >= validDate(event.completedAt);
-    const abnormal = laterVerified ? [] : eventNotifications(event, project);
-    if (ageHours > maxAgeHours) notifications.push(notification('stale_event', event, { ageHours: Math.floor(ageHours) }));
+    const superseded = event.operation === 'publish-day'
+      && isSupersededByVerified(event, latestVerifiedPublishByDay.get(event.day));
+    const abnormal = superseded ? [] : eventNotifications(event, project);
+    if (!superseded && ageHours > maxAgeHours) notifications.push(notification('stale_event', event, { ageHours: Math.floor(ageHours) }));
     else notifications.push(...abnormal);
     processed.add(event.eventId);
   }

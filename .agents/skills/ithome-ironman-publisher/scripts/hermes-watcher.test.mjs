@@ -166,6 +166,62 @@ describe('Hermes watcher decision engine', () => {
     expect(evaluate([uncertain, verified]).notifications).toEqual([]);
   });
 
+  test('lets complete verified evidence suppress a later zero-click draft_missing observation for the same day', () => {
+    const verified = {
+      ...common,
+      eventId: 'day6-verified',
+      operation: 'publish-day',
+      day: 6,
+      status: 'verified',
+      completedAt: '2026-09-01T10:55:00.000Z',
+      result: {
+        reasonCode: 'published', publishClickCount: 1, publicVerification: 'verified',
+        articleUrl: 'https://ithelp.ithome.com.tw/articles/day6', title: 'Day 6 title',
+        canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/06/',
+      },
+    };
+    const laterDraftMissing = {
+      ...common,
+      eventId: 'day6-later-draft-missing',
+      operation: 'publish-day',
+      day: 6,
+      status: 'blocked',
+      completedAt: '2026-09-01T10:57:00.000Z',
+      result: { reasonCode: 'draft_missing', publishClickCount: 0, publicVerification: 'not_started' },
+    };
+
+    expect(evaluate([verified, laterDraftMissing]).notifications).toEqual([]);
+  });
+
+  test('still notifies a later click-one uncertain result even when that day has verified evidence', () => {
+    const verified = {
+      ...common,
+      eventId: 'day7-verified',
+      operation: 'publish-day',
+      day: 7,
+      status: 'verified',
+      completedAt: '2026-09-01T10:55:00.000Z',
+      result: {
+        reasonCode: 'published', publishClickCount: 1, publicVerification: 'verified',
+        articleUrl: 'https://ithelp.ithome.com.tw/articles/day7', title: 'Day 7 title',
+        canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/07/',
+      },
+    };
+    const laterUncertain = {
+      ...common,
+      eventId: 'day7-later-uncertain',
+      operation: 'publish-day',
+      day: 7,
+      status: 'uncertain',
+      completedAt: '2026-09-01T10:57:00.000Z',
+      result: { reasonCode: 'post_publish_unverified', publishClickCount: 1, publicVerification: 'uncertain' },
+    };
+
+    expect(evaluate([verified, laterUncertain]).notifications).toMatchObject([
+      { kind: 'publish_failed', eventId: 'day7-later-uncertain', day: 7, status: 'uncertain' },
+    ]);
+  });
+
   test('reports stale abnormal evidence separately instead of presenting it as current', () => {
     const event = { ...common, eventId: 'old-failure', status: 'failed', completedAt: '2026-08-29T00:00:00.000Z', failure: { reasonCode: 'ui_unreadable', phase: 'scan' } };
     expect(evaluate([event]).notifications).toMatchObject([{ kind: 'stale_event', eventId: 'old-failure' }]);

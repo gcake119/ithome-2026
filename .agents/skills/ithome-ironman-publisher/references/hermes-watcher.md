@@ -36,6 +36,7 @@ node .agents/skills/ithome-ironman-publisher/scripts/hermes-watcher.mjs \
 - A fresh `audit-drafts: complete` event is silent.
 - Missing, duplicate, mismatch, unclassified, and failed audit results produce distinct notification decisions.
 - Blocked, failed, or uncertain publish results and non-verified bootstrap events produce failure notification decisions.
+- Publish events are also reconciled by Day. Complete verified evidence suppresses earlier same-Day anomalies and a later zero-click `draft_missing` observation caused by overlapping post-publish checks. A later click-one `uncertain` result is never suppressed.
 - Events older than the default 36-hour window produce `stale_event` instead of being presented as current evidence. Override only with an explicit `--max-age-hours` value.
 - Invoke with `--checkpoint day1-1900` at the Day 1 19:00 schedule and `--checkpoint day1-2230` at the 22:30 schedule. Missing or invalid verified state produces one reminder per checkpoint.
 - After a checkpoint has observed missing or invalid bootstrap state, the first later valid state produces one `bootstrap_recovered` decision. Later runs remain silent.
