@@ -35,7 +35,7 @@ function driver(overrides = {}) {
       contestTag: '18th鐵人賽',
     })),
     publishOnce: vi.fn(async ({ markClickDispatched }) => { await markClickDispatched(); return { clicked: true }; }),
-    verifyPublic: vi.fn(async () => ({ verified: true, articleUrl: 'https://ithelp.ithome.com.tw/articles/123456' })),
+    verifyPublic: vi.fn(async () => ({ verified: true, draftPresent: false, articleUrl: 'https://ithelp.ithome.com.tw/articles/123456' })),
     ...overrides,
   };
 }
@@ -133,7 +133,7 @@ describe('iThome browser adapter', () => {
     const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'uncertain' });
 
     expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
-    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(3);
+    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(6);
     expect(outcome).toMatchObject({
       status: 'uncertain',
       result: { reasonCode: 'post_publish_unverified', publishClickCount: 1, publicVerification: 'uncertain' },
@@ -143,8 +143,8 @@ describe('iThome browser adapter', () => {
   test('converges delayed public evidence through read-only verification retries', async () => {
     const browserDriver = driver({
       verifyPublic: vi.fn()
-        .mockResolvedValueOnce({ verified: false })
-        .mockResolvedValueOnce({ verified: true, articleUrl: 'https://ithelp.ithome.com.tw/articles/123456' }),
+        .mockResolvedValueOnce({ verified: false, draftPresent: true })
+        .mockResolvedValueOnce({ verified: true, draftPresent: false, articleUrl: 'https://ithelp.ithome.com.tw/articles/123456' }),
     });
     const publish = createIthomeBrowserAdapter({
       driver: browserDriver,
@@ -161,6 +161,46 @@ describe('iThome browser adapter', () => {
     expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
     expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(2);
     expect(outcome).toMatchObject({ status: 'verified', result: { publishClickCount: 1, publicVerification: 'verified' } });
+  });
+
+  test('does not verify while the exact draft still exists even if a public title match appears', async () => {
+    const browserDriver = driver({
+      verifyPublic: vi.fn(async () => ({
+        verified: true,
+        draftPresent: true,
+        articleUrl: 'https://ithelp.ithome.com.tw/articles/123456',
+      })),
+    });
+
+    const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'draft-remains' });
+
+    expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
+    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(6);
+    expect(outcome).toMatchObject({
+      status: 'uncertain',
+      result: { reasonCode: 'post_publish_unverified', publishClickCount: 1, publicVerification: 'uncertain' },
+    });
+  });
+
+  test.each([
+    ['confirmation_required', 'publish_confirmation_required'],
+    ['server_error', 'publish_server_error'],
+  ])('preserves the fresh post-click %s state without a second click', async (postClickState, reasonCode) => {
+    const browserDriver = driver({
+      publishOnce: vi.fn(async ({ markClickDispatched }) => {
+        await markClickDispatched();
+        return { clicked: true, postClickState };
+      }),
+      verifyPublic: vi.fn(async () => ({ verified: false, draftPresent: true })),
+    });
+
+    const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: postClickState });
+
+    expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
+    expect(outcome).toMatchObject({
+      status: 'uncertain',
+      result: { reasonCode, publishClickCount: 1, publicVerification: 'uncertain' },
+    });
   });
 
   test.each(['cloudflare', 'captcha', 'rate_limited'])('stops public verification immediately on %s', async (reasonCode) => {

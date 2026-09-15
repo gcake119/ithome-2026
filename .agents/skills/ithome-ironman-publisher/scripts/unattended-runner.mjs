@@ -58,6 +58,8 @@ const PHASE_BY_REASON = new Map([
   ['click_receipt_write_failed', 'publish_interlock'],
   ['publish_not_clicked', 'publish_click'],
   ['publish_click_untracked', 'publish_click'],
+  ['publish_confirmation_required', 'public_verification'],
+  ['publish_server_error', 'public_verification'],
   ['post_publish_unverified', 'public_verification'],
   ['driver_payload_stale', 'result_validation'],
   ['driver_contract_invalid', 'result_validation'],

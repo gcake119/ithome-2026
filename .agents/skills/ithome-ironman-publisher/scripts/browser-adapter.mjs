@@ -31,8 +31,8 @@ export function createIthomeBrowserAdapter({
   expectedContestTag,
   loadBootstrap,
   recordClickDispatched,
-  verificationAttempts = 3,
-  verificationDelayMs = 2_000,
+  verificationAttempts = 6,
+  verificationDelayMs = 5_000,
 }) {
   if (!driver || typeof loadBootstrap !== 'function' || typeof recordClickDispatched !== 'function') {
     throw new Error('driver, loadBootstrap, and recordClickDispatched are required');
@@ -89,10 +89,16 @@ export function createIthomeBrowserAdapter({
         publicVerification: 'uncertain',
       });
 
+      const postClickReason = publishResult.postClickState === 'confirmation_required'
+        ? 'publish_confirmation_required'
+        : publishResult.postClickState === 'server_error'
+          ? 'publish_server_error'
+          : 'post_publish_unverified';
+
       for (let attempt = 1; attempt <= verificationAttempts; attempt += 1) {
         try {
           const verification = await driver.verifyPublic({ payload, bootstrap });
-          if (verification?.verified) {
+          if (verification?.verified && verification?.draftPresent === false) {
             return outcome('verified', fingerprint, 'published', {
               publishClickCount,
               publicVerification: 'verified',
@@ -108,7 +114,7 @@ export function createIthomeBrowserAdapter({
           await new Promise((resolve) => setTimeout(resolve, verificationDelayMs));
         }
       }
-      return outcome('uncertain', fingerprint, 'post_publish_unverified', { publishClickCount, publicVerification: 'uncertain' });
+      return outcome('uncertain', fingerprint, postClickReason, { publishClickCount, publicVerification: 'uncertain' });
     } catch (error) {
       const reasonCode = error?.reasonCode || (publishClickCount === 1 ? 'post_publish_unverified' : 'browser_driver_failed');
       const status = publishClickCount === 1 ? 'uncertain' : reasonCode === 'prior_publish_click_recorded' ? 'blocked' : 'failed';

@@ -36,6 +36,17 @@ function blockedBy(text) {
   return BLOCK_PATTERNS.find(([, pattern]) => pattern.test(text))?.[0] || null;
 }
 
+export function classifyPostClickState({ url, dialogText = '', bodyText: text = '' }) {
+  if (/^https:\/\/ithelp\.ithome\.com\.tw\/articles\/[^/]+\/?$/.test(url)
+    && !/\/draft\/?$/.test(url)) return 'accepted';
+  if (/發表失敗|發布失敗|系統錯誤|發生錯誤|稍後再試|無法發表/.test(`${dialogText}\n${text}`)) return 'server_error';
+  if (/確定.{0,12}(發表|發布)|確認.{0,12}(發表|發布)|是否.{0,12}(發表|發布)/.test(dialogText)) {
+    return 'confirmation_required';
+  }
+  if (/發表成功|發布成功|文章已發表/.test(text)) return 'accepted';
+  return 'pending';
+}
+
 async function navigate(page, url) {
   const response = await page.goto(url, { waitUntil: 'load', timeout: 30_000 });
   if (response?.status?.() === 429) throw reasonError('rate_limited');
@@ -208,24 +219,52 @@ export function createPlaywrightIthomeDriver({ chromiumImpl = chromium, config }
       if (typeof markClickDispatched !== 'function') throw reasonError('publish_click_untracked');
       await markClickDispatched();
       await publishAction.click({ timeout: 10_000, noWaitAfter: true });
-      return { clicked: true };
+      if (typeof activePage.waitForTimeout === 'function') await activePage.waitForTimeout(500);
+      const snapshot = await activePage.evaluate(() => {
+        const visible = (element) => {
+          const style = window.getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+        };
+        const dialogs = [...document.querySelectorAll('[role="dialog"], dialog[open], .modal.show, .swal2-popup')]
+          .filter(visible)
+          .map((element) => element.innerText || '')
+          .join('\n');
+        return { dialogText: dialogs, bodyText: document.body?.innerText || '' };
+      });
+      const postClickState = classifyPostClickState({ url: activePage.url(), ...snapshot });
+      return { clicked: true, postClickState };
     },
 
     async verifyPublic({ payload, bootstrap }) {
       const activePage = requirePage();
       try { await activePage.waitForLoadState('domcontentloaded', { timeout: 15_000 }); } catch {}
+      let articleUrl = null;
       const current = activePage.url();
-      if (!/^https:\/\/ithelp\.ithome\.com\.tw\/articles\/[^/]+\/?$/.test(current)) {
+      if (!/^https:\/\/ithelp\.ithome\.com\.tw\/articles\/[^/]+\/?$/.test(current) || /\/draft\/?$/.test(current)) {
         const entries = await this.scanPublic({ payload, bootstrap });
-        if (entries.length !== 1) return { verified: false };
-        await navigate(activePage, entries[0].url);
+        if (entries.length === 1) {
+          articleUrl = entries[0].url;
+          await navigate(activePage, articleUrl);
+        }
+      } else {
+        articleUrl = current;
       }
-      const text = await bodyText(activePage);
-      const antiAutomation = blockedBy(text);
-      if (antiAutomation) throw reasonError(antiAutomation);
-      const titleCount = await activePage.getByText(payload.title, { exact: true }).count();
-      const canonicalCount = await activePage.locator(`a[href="${payload.canonicalUrl}"]`).count();
-      return { verified: titleCount > 0 && canonicalCount > 0, articleUrl: activePage.url() };
+      let publicVerified = false;
+      if (articleUrl) {
+        const text = await bodyText(activePage);
+        const antiAutomation = blockedBy(text);
+        if (antiAutomation) throw reasonError(antiAutomation);
+        const titleCount = await activePage.getByText(payload.title, { exact: true }).count();
+        const canonicalCount = await activePage.locator(`a[href="${payload.canonicalUrl}"]`).count();
+        publicVerified = titleCount > 0 && canonicalCount > 0;
+      }
+      const drafts = await this.scanDrafts({ payload, bootstrap });
+      return {
+        verified: publicVerified,
+        draftPresent: drafts.length > 0,
+        ...(articleUrl ? { articleUrl } : {}),
+      };
     },
   };
 }

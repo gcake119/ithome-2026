@@ -174,4 +174,20 @@ describe('unattended local publisher runner', () => {
     expect(result).toMatchObject({ status: 'uncertain', silent: false, result: { reasonCode: 'driver_contract_invalid' } });
     expect(events[0].status).toBe('uncertain');
   });
+
+  test.each(['publish_confirmation_required', 'publish_server_error'])('maps %s to the public verification phase', async (reasonCode) => {
+    const events = [];
+    await runUnattendedPublisher({
+      day: 12,
+      project,
+      prepare: async () => payload,
+      publish: async ({ fingerprint }) => ({
+        status: 'uncertain', fingerprint,
+        result: { reasonCode, publishClickCount: 1, publicVerification: 'uncertain' },
+      }),
+      emit: async (event) => events.push(event),
+    });
+
+    expect(events[0].result).toMatchObject({ reasonCode, phase: 'public_verification' });
+  });
 });

@@ -31,4 +31,6 @@ If the draft is missing, stop with `draft_missing` and suggest a separate `repai
 
 Open the verified draft and prepare the publish menu. Immediately before the final publish action, ask for confirmation naming the Day, exact title, canonical URL, and zero click count. After confirmation, click once and immediately record `publishClickCount = 1` before interpreting any navigation, toast, timeout, or error.
 
-Verify the public page for exact Day, title, and canonical sync line. Report `verified` only on exact evidence. If uncertain, report `uncertain`, stop, and do not click again. A later run must audit public and draft state before any decision.
+After that one click, inspect a fresh DOM snapshot and classify it as accepted, confirmation still required, server error, or pending. A newly exposed confirmation control is evidence, not permission for a second click; keep the receipt, continue only with bounded read-only checks, and report an explicit uncertain result if publication cannot be proven.
+
+Verify the public page for exact Day, title, and canonical sync line, and independently verify that the exact draft no longer exists. Report `verified` only when both observations agree. The unattended adapter uses six read-only attempts separated by five seconds. If the result remains uncertain, stop and do not click again. A later run must audit public and draft state before any decision.
