@@ -8,6 +8,7 @@ The watcher reads:
 
 - publisher events from `/Users/Shared/ithome-ironman-bridge/events/`;
 - verified Day 1 state from `/Users/Shared/ithome-ironman-bridge/state/series-bootstrap.json`;
+- the sibling Hermes-owned `public-watchdog-state.json`, when present, as independent public verification evidence;
 - deduplication state from a Hermes-owned absolute path ending in `watcher-state.json`.
 
 It prints one JSON result. `notifications` contains messages that Hermes may relay through its existing Telegram capability. `watchdog.status: "ready"` hands the verified `seriesUrl` and `seriesId` to the existing public-series watchdog. A blocked watchdog must not guess the series identity.
@@ -36,7 +37,7 @@ node .agents/skills/ithome-ironman-publisher/scripts/hermes-watcher.mjs \
 - A fresh `audit-drafts: complete` event is silent.
 - Missing, duplicate, mismatch, unclassified, and failed audit results produce distinct notification decisions.
 - Blocked, failed, or uncertain publish results and non-verified bootstrap events produce failure notification decisions.
-- Publish events are also reconciled by Day. Complete verified evidence suppresses earlier same-Day anomalies and a later zero-click `draft_missing` observation caused by overlapping post-publish checks. A later click-one `uncertain` result is never suppressed.
+- Publish events are also reconciled by Day. Complete verified publisher evidence suppresses earlier same-Day anomalies and a later zero-click `draft_missing` observation caused by overlapping post-publish checks. A valid later public-watchdog verification may also suppress earlier same-Day anomalies after a manual publication. Different-Day anomalies and publisher events created after the public verification are never suppressed.
 - Events older than the default 36-hour window produce `stale_event` instead of being presented as current evidence. Override only with an explicit `--max-age-hours` value.
 - Invoke with `--checkpoint day1-1900` at the Day 1 19:00 schedule and `--checkpoint day1-2230` at the 22:30 schedule. Missing or invalid verified state produces one reminder per checkpoint.
 - After a checkpoint has observed missing or invalid bootstrap state, the first later valid state produces one `bootstrap_recovered` decision. Later runs remain silent.

@@ -88,7 +88,17 @@ function isSupersededByVerified(event, verified) {
     && event.result?.publicVerification === 'not_started';
 }
 
-export function evaluateWatcher({ events, bootstrap, state = {}, now = new Date().toISOString(), checkpoint, maxAgeHours = DEFAULT_MAX_AGE_HOURS, project = loadProjectConfigSync() }) {
+function isSupersededByPublicVerification(event, publicState, project) {
+  if (publicState?.schemaVersion !== 1 || publicState?.lastCheck?.status !== 'verified') return false;
+  if (!Number.isInteger(event?.day) || publicState.lastCheck.day !== event.day) return false;
+  const scheduled = project.schedule.find((item) => item.day === event.day);
+  if (!scheduled || publicState.lastCheck.date !== scheduled.date) return false;
+  const verifiedAt = validDate(publicState.updatedAt);
+  const eventAt = validDate(event.completedAt);
+  return verifiedAt !== null && eventAt !== null && verifiedAt >= eventAt;
+}
+
+export function evaluateWatcher({ events, bootstrap, publicState, state = {}, now = new Date().toISOString(), checkpoint, maxAgeHours = DEFAULT_MAX_AGE_HOURS, project = loadProjectConfigSync() }) {
   if (!Array.isArray(events)) throw new Error('events must be an array');
   if (checkpoint !== undefined && !CHECKPOINTS.has(checkpoint)) throw new Error('checkpoint must be day1-1900 or day1-2230');
   const nowMs = validDate(now);
@@ -124,7 +134,8 @@ export function evaluateWatcher({ events, bootstrap, state = {}, now = new Date(
 
     const ageHours = (nowMs - validDate(event.completedAt)) / 3_600_000;
     const superseded = event.operation === 'publish-day'
-      && isSupersededByVerified(event, latestVerifiedPublishByDay.get(event.day));
+      && (isSupersededByVerified(event, latestVerifiedPublishByDay.get(event.day))
+        || isSupersededByPublicVerification(event, publicState, project));
     const abnormal = superseded ? [] : eventNotifications(event, project);
     if (!superseded && ageHours > maxAgeHours) notifications.push(notification('stale_event', event, { ageHours: Math.floor(ageHours) }));
     else notifications.push(...abnormal);
@@ -219,9 +230,11 @@ function parseArgs(argv) {
 
 function main(argv) {
   const options = parseArgs(argv);
-  const state = readDirectJson(resolve(options.state), { optional: true }) ?? {};
+  const statePath = resolve(options.state);
+  const state = readDirectJson(statePath, { optional: true }) ?? {};
+  const publicState = readDirectJson(join(dirname(statePath), 'public-watchdog-state.json'), { optional: true });
   const bootstrap = readDirectJson(resolve(options.bootstrap), { optional: true });
-  const result = evaluateWatcher({ events: readEvents(resolve(options.events)), bootstrap, state, now: options.now, checkpoint: options.checkpoint, maxAgeHours: options.maxAgeHours });
+  const result = evaluateWatcher({ events: readEvents(resolve(options.events)), bootstrap, publicState, state, now: options.now, checkpoint: options.checkpoint, maxAgeHours: options.maxAgeHours });
   if (!options.dryRun) writeState(options.state, result.nextState);
   process.stdout.write(`${JSON.stringify({ ...result, dryRun: options.dryRun }, null, 2)}\n`);
 }
