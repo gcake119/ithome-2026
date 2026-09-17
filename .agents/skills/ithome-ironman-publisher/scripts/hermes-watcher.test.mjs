@@ -268,6 +268,44 @@ describe('Hermes watcher decision engine', () => {
     ]);
   });
 
+  test('uses preserved verified evidence after a later reminder updates lastCheck', () => {
+    const day8Blocked = {
+      ...common,
+      eventId: 'day8-anti-automation-before-verification',
+      operation: 'publish-day',
+      day: 8,
+      status: 'blocked',
+      completedAt: '2026-09-16T02:16:12.000Z',
+      result: { reasonCode: 'anti_automation', phase: 'browser_session', publishClickCount: 0, publicVerification: 'not_started' },
+    };
+    const day9Blocked = {
+      ...common,
+      eventId: 'day9-anti-automation',
+      operation: 'publish-day',
+      day: 9,
+      status: 'blocked',
+      completedAt: '2026-09-17T01:30:06.000Z',
+      result: { reasonCode: 'anti_automation', phase: 'browser_session', publishClickCount: 0, publicVerification: 'not_started' },
+    };
+    const publicState = {
+      schemaVersion: 1,
+      lastCheck: { date: '2026-09-17', day: 9, status: 'reminder' },
+      lastVerified: { date: '2026-09-16', day: 8, status: 'verified', verifiedAt: '2026-09-16T11:00:00.000Z' },
+      updatedAt: '2026-09-17T01:00:56.553Z',
+    };
+
+    const result = evaluateWatcher({
+      events: [day8Blocked, day9Blocked],
+      bootstrap: null,
+      publicState,
+      now: '2026-09-17T01:35:00.000Z',
+    });
+
+    expect(result.notifications).toMatchObject([
+      { kind: 'publish_failed', eventId: 'day9-anti-automation', day: 9, status: 'blocked' },
+    ]);
+  });
+
   test('reports stale abnormal evidence separately instead of presenting it as current', () => {
     const event = { ...common, eventId: 'old-failure', status: 'failed', completedAt: '2026-08-29T00:00:00.000Z', failure: { reasonCode: 'ui_unreadable', phase: 'scan' } };
     expect(evaluate([event]).notifications).toMatchObject([{ kind: 'stale_event', eventId: 'old-failure' }]);

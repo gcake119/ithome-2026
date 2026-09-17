@@ -78,5 +78,6 @@ node .agents/skills/ithome-ironman-publisher/scripts/hermes-github-pages-watchdo
 - Each public fetch tries once and retries at most twice, waiting two minutes between attempts. Only exhausted read failures produce `public_watchdog_unavailable`; they are never reported as an unpublished article.
 - A verified result is silent. Missing, ambiguous, non-latest, title-mismatched, or canonical-mismatched public evidence produces a publication reminder. Missing publisher-event evidence alone is not treated as a publication failure when the exact public article can be independently verified.
 - Reminder and both checkpoints use separate deduplication keys in the Hermes-owned `public-watchdog-state.json`.
+- The state keeps the latest public check and the latest verified check separately. A later 09:00 reminder or failed check must not erase the verified evidence needed to reconcile an earlier same-Day publisher anomaly.
 
 The script does not install schedules or send Telegram. Pipe its JSON result through `scripts/hermes-watcher-notify.mjs` and the existing Hermes `--no-agent` relay.

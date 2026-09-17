@@ -89,11 +89,16 @@ function isSupersededByVerified(event, verified) {
 }
 
 function isSupersededByPublicVerification(event, publicState, project) {
-  if (publicState?.schemaVersion !== 1 || publicState?.lastCheck?.status !== 'verified') return false;
-  if (!Number.isInteger(event?.day) || publicState.lastCheck.day !== event.day) return false;
+  if (publicState?.schemaVersion !== 1) return false;
+  const verified = publicState.lastVerified?.status === 'verified'
+    ? publicState.lastVerified
+    : publicState.lastCheck?.status === 'verified'
+      ? { ...publicState.lastCheck, verifiedAt: publicState.updatedAt }
+      : null;
+  if (!verified || !Number.isInteger(event?.day) || verified.day !== event.day) return false;
   const scheduled = project.schedule.find((item) => item.day === event.day);
-  if (!scheduled || publicState.lastCheck.date !== scheduled.date) return false;
-  const verifiedAt = validDate(publicState.updatedAt);
+  if (!scheduled || verified.date !== scheduled.date) return false;
+  const verifiedAt = validDate(verified.verifiedAt);
   const eventAt = validDate(event.completedAt);
   return verifiedAt !== null && eventAt !== null && verifiedAt >= eventAt;
 }

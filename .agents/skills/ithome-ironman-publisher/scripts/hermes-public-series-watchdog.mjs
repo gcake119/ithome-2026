@@ -309,7 +309,21 @@ async function main(argv) {
   const delivered = new Set(Array.isArray(state.delivered) ? state.delivered : []);
   const notifications = delivered.has(key) ? [] : result.notifications;
   delivered.add(key);
-  const nextState = { schemaVersion: 1, delivered: [...delivered].slice(-90), lastCheck: { date, day: scheduled.day, status: result.status }, updatedAt: new Date().toISOString() };
+  const updatedAt = new Date().toISOString();
+  let lastVerified = state.lastVerified;
+  if (!lastVerified && state.lastCheck?.status === 'verified') {
+    lastVerified = { ...state.lastCheck, verifiedAt: state.updatedAt };
+  }
+  if (options.mode === 'check' && result.status === 'verified') {
+    lastVerified = { date, day: scheduled.day, status: 'verified', verifiedAt: updatedAt };
+  }
+  const nextState = {
+    schemaVersion: 1,
+    delivered: [...delivered].slice(-90),
+    lastCheck: { date, day: scheduled.day, status: result.status },
+    ...(lastVerified ? { lastVerified } : {}),
+    updatedAt,
+  };
   if (!options.dryRun) writeState(options.state, nextState);
   process.stdout.write(`${JSON.stringify({ ...result, notifications, date, day: scheduled.day, nextState, dryRun: options.dryRun }, null, 2)}\n`);
 }

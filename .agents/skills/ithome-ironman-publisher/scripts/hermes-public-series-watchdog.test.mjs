@@ -58,6 +58,35 @@ describe('Hermes public series watchdog', () => {
     }
   });
 
+  test('keeps the latest verified evidence when the next day reminder updates state', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'Hermes watchdog-state-'));
+    const state = join(directory, 'public-watchdog-state.json');
+    const lastVerified = {
+      date: '2026-09-16',
+      day: 8,
+      status: 'verified',
+      verifiedAt: '2026-09-16T11:00:00.000Z',
+    };
+    writeFileSync(state, `${JSON.stringify({ schemaVersion: 1, delivered: [], lastVerified })}\n`);
+
+    try {
+      const { stdout } = await execFileAsync(process.execPath, [
+        watchdogPath,
+        '--mode', 'reminder',
+        '--state', state,
+        '--date', '2026-09-17',
+        '--dry-run',
+      ]);
+
+      expect(JSON.parse(stdout).nextState).toMatchObject({
+        lastCheck: { date: '2026-09-17', day: 9, status: 'reminder' },
+        lastVerified,
+      });
+    } finally {
+      rmSync(directory, { recursive: true });
+    }
+  });
+
   test('builds the unconditional morning reminder from the explicit schedule', () => {
     expect(publicationReminder({ day: 17, date: '2026-08-29' })).toEqual({
       kind: 'publication_reminder',
