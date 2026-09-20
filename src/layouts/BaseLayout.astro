@@ -1,12 +1,41 @@
 ---
 import '../styles/global.css';
 import { loadProjectConfigSync } from '../../scripts/ithome/config.mjs';
-interface Props { title?: string; description?: string; }
+import { buildSeoMetadata, serializeJsonLd, type SeoPageType } from '../lib/seo';
+interface Props {
+  title?: string;
+  description?: string;
+  pageType?: SeoPageType;
+  isHome?: boolean;
+  publishedTime?: string;
+  modifiedTime?: string;
+}
 const project = loadProjectConfigSync();
-const { publication, site, brand } = project;
-const { title = publication.seriesTitle, description = site.home.summary } = Astro.props;
+const { publication, site, brand, seo } = project;
+const {
+  title = publication.seriesTitle,
+  description = site.home.summary,
+  pageType = 'website',
+  isHome = false,
+  publishedTime,
+  modifiedTime,
+} = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const rssUrl = new URL(`${import.meta.env.BASE_URL}rss.xml`, Astro.site);
+const sitemapUrl = new URL(`${import.meta.env.BASE_URL}sitemap.xml`, Astro.site);
+const socialImageUrl = new URL(`${import.meta.env.BASE_URL}${seo.socialImage}`, Astro.site);
+const metadata = buildSeoMetadata({
+  title,
+  description,
+  canonicalUrl: canonical.href,
+  siteName: seo.siteName,
+  authorName: seo.authorName,
+  socialImageUrl: socialImageUrl.href,
+  pageType,
+  isHome,
+  publishedTime,
+  modifiedTime,
+});
 ---
 <!doctype html>
 <html lang="zh-Hant">
@@ -15,14 +44,30 @@ const rssUrl = new URL(`${import.meta.env.BASE_URL}rss.xml`, Astro.site);
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    <meta property="og:title" content={metadata.openGraph.title} />
+    <meta property="og:description" content={metadata.openGraph.description} />
+    <meta property="og:type" content={metadata.openGraph.type} />
+    <meta property="og:url" content={metadata.openGraph.url} />
+    <meta property="og:image" content={metadata.openGraph.image} />
+    <meta property="og:image:alt" content={brand.mark.alt} />
+    <meta property="og:site_name" content={metadata.openGraph.siteName} />
+    <meta property="og:locale" content={metadata.openGraph.locale} />
+    <meta name="twitter:card" content={metadata.twitter.card} />
+    <meta name="twitter:title" content={metadata.twitter.title} />
+    <meta name="twitter:description" content={metadata.twitter.description} />
+    <meta name="twitter:image" content={metadata.twitter.image} />
+    {pageType === 'article' && publishedTime && <meta property="article:published_time" content={publishedTime} />}
+    {pageType === 'article' && modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
     <link rel="icon" href={`${import.meta.env.BASE_URL}${brand.favicon}`} />
     <link rel="apple-touch-icon" href={`${import.meta.env.BASE_URL}${brand.appleTouchIcon}`} />
     <link rel="canonical" href={canonical} />
     <link rel="alternate" type="application/rss+xml" title="RSS" href={rssUrl} />
+    <link rel="sitemap" href={sitemapUrl} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-    <title>{title}</title>
+    <title>{metadata.documentTitle}</title>
+    <script is:inline type="application/ld+json" set:html={serializeJsonLd(metadata.jsonLd)} />
     <script is:inline define:vars={{ themeKey: `${publication.seriesKey}:theme` }}>
       (() => { try { const saved = localStorage.getItem(themeKey); document.documentElement.dataset.theme = saved === 'light' || saved === 'dark' ? saved : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch (_) {} })();
     </script>
@@ -35,7 +80,7 @@ const rssUrl = new URL(`${import.meta.env.BASE_URL}rss.xml`, Astro.site);
       </span>
     </button>
     <header class="site-header"><a class="brand" href={import.meta.env.BASE_URL}>{publication.seriesTitle}</a><span>{site.tagline}</span></header>
-    <main><slot /></main>
+    <slot />
     <footer><span>{publication.totalDays} 天連載 · Markdown / Astro / GitHub Pages</span></footer>
     <script is:inline define:vars={{ themeKey: `${publication.seriesKey}:theme` }}>
       (() => {

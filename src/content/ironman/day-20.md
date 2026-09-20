@@ -1,5 +1,6 @@
 ---
 title: "Day 20｜從「我要這個功能」到「系統必須保證什麼」"
+description: "以 QA 情境切換為例，把功能需求拆成身分、權限與一致性等不可破壞的條件，並追問誰負責守住這些保證。"
 day: 20
 section: "chapter-3"
 publishDate: 2026-09-28

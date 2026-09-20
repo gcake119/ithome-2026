@@ -1,5 +1,6 @@
 ---
 title: "Day 8｜沒有告訴 AI 的事"
+description: "整理 AI 規劃與反問如何提早暴露需求缺口，並區分使用者忘了說與使用者自己尚未理解的兩種資訊缺失。"
 day: 8
 section: "chapter-2"
 publishDate: 2026-09-16

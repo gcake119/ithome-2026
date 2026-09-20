@@ -11,7 +11,7 @@ const publishedCount = ironman.filter((post) => isPublished(post)).length;
 const publishedExtensions = extensions.filter((post) => isPublished(post));
 const storageKey = `${publication.seriesKey}:last-read`;
 ---
-<BaseLayout title={publication.seriesTitle}>
+<BaseLayout title={publication.seriesTitle} description={site.home.summary} isHome>
   <div class="reader-layout">
     <aside class="series-sidebar">
       <a class="sidebar-brand" href={base} aria-current="page"><SeriesMark /><span><strong>{publication.seriesTitle}</strong><small>{site.tagline}</small></span></a>

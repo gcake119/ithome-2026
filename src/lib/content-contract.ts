@@ -1,6 +1,6 @@
 export interface ContractIronman {
   id: string;
-  data: { day: number; section: string; publishDate: Date };
+  data: { day: number; section: string; description: string; publishDate: Date };
 }
 export interface ContractExtension {
   id: string;
@@ -20,6 +20,7 @@ export function assertContentContract(ironman: ContractIronman[], extensions: Co
     const prior = days.get(post.data.day);
     if (prior) errors.push(`${post.id}: day=${post.data.day} duplicates ${prior}`);
     days.set(post.data.day, post.id);
+    if (!post.data.description?.trim()) errors.push(`${post.id}: description is required`);
     if (!sectionIds.has(post.data.section)) errors.push(`${post.id}: section=${post.data.section} expected configured learningMap section`);
     const expectedDate = schedule.get(post.data.day);
     const receivedDate = post.data.publishDate.toISOString().slice(0, 10);

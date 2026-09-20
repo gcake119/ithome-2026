@@ -1,5 +1,6 @@
 ---
 title: "Day 4｜如果所有事情都能交給 LINE 機器人就好了"
+description: "回顧把預約流程全部放進 LINE 機器人的最初構想，以及熟悉入口、對話流程與前端能力如何影響產品形式。"
 day: 4
 section: "chapter-2"
 publishDate: 2026-09-12

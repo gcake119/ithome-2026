@@ -1,5 +1,6 @@
 ---
 title: "Day 14｜我開始能從工作流程看見系統需要做什麼"
+description: "從工作流程圖往下推導案件階段、狀態與系統需求，說明如何在實作前提早看見系統需要管理的事情。"
 day: 14
 section: "chapter-3"
 publishDate: 2026-09-22

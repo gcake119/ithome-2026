@@ -8,13 +8,19 @@ const { post, previous, next, related } = Astro.props;
 const project = loadProjectConfigSync();
 const base = import.meta.env.BASE_URL;
 ---
-<BaseLayout title={post.data.title} description={post.data.description ?? post.data.title}>
+<BaseLayout
+  title={post.data.title}
+  description={post.data.description}
+  pageType="article"
+  publishedTime={post.data.publishDate.toISOString()}
+  modifiedTime={post.data.updatedDate?.toISOString()}
+>
   <div class="reader-layout">
     <aside class="series-sidebar">
       <a class="sidebar-brand" href={base}><SeriesMark /><span><strong>{project.publication.seriesTitle}</strong><small>{project.site.tagline}</small></span></a>
       <div class="sidebar-heading"><h2><a href={base}>{project.extensions.title}</a></h2><p>{project.extensions.description}</p></div>
     </aside>
-    <main class="reading-pane"><article class="article-shell"><div class="article-meta"><span class="article-day">{project.extensions.title}</span><time>{post.data.publishDate.toLocaleDateString('zh-TW')}</time></div><h1>{post.data.title}</h1><p class="part-title">{post.data.description}</p><div class="prose"><slot /></div>
+    <main class="reading-pane"><article class="article-shell"><div class="article-meta"><span class="article-day">{project.extensions.title}</span><time datetime={post.data.publishDate.toISOString().slice(0, 10)}>{post.data.publishDate.toLocaleDateString('zh-TW')}</time></div><h1>{post.data.title}</h1><p class="part-title">{post.data.description}</p><div class="prose"><slot /></div>
       {related.length > 0 && <section class="related-days"><h2>相關鐵人賽文章</h2><ul>{related.map((item) => <li><a href={`${base}${dayPath(item.data.day).slice(1)}`}>Day {String(item.data.day).padStart(2, '0')}｜{item.data.title.replace(/^Day\s*\d+｜/, '')}</a></li>)}</ul></section>}
       <nav class="post-nav" aria-label="延伸閱讀導覽"><div>{previous && <a href={`${base}${extensionPath(previous.data.slug).slice(1)}`}><small>← 較新的延伸閱讀</small><strong>{previous.data.title}</strong></a>}</div><div>{next && <a href={`${base}${extensionPath(next.data.slug).slice(1)}`}><small>較早的延伸閱讀 →</small><strong>{next.data.title}</strong></a>}</div></nav>
     </article></main>

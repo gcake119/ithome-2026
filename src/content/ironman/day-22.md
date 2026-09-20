@@ -1,5 +1,6 @@
 ---
 title: "Day 22｜從理解工程概念，到形成自己的判斷"
+description: "從聽懂工程概念到能在新需求中主動運用，整理如何判斷一個由 AI 解釋的觀念是否逐漸變成自己的判斷。"
 day: 22
 section: "chapter-4"
 publishDate: 2026-09-30

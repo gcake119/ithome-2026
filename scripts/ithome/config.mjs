@@ -49,6 +49,7 @@ export function validateProjectConfig(config, { requireInitialized = false } = {
       ids.add(section?.id);
       if (!text(section?.title)) errors.push(`learningMap.sections.${index}.title`);
       if (!text(section?.description)) errors.push(`learningMap.sections.${index}.description`);
+      if (section?.articleContext !== undefined && !text(section.articleContext)) errors.push(`learningMap.sections.${index}.articleContext`);
     }
   }
   if (typeof config?.extensions?.enabled !== 'boolean') errors.push('extensions.enabled');
@@ -62,6 +63,14 @@ export function validateProjectConfig(config, { requireInitialized = false } = {
     else {
       const resolved = path.resolve(PUBLIC_DIR, value);
       if (!resolved.startsWith(`${PUBLIC_DIR}${path.sep}`) || !existsSync(resolved)) errors.push(key);
+    }
+  }
+  if (config?.seo !== undefined) {
+    for (const key of ['siteName', 'authorName']) if (!text(config?.seo?.[key])) errors.push(`seo.${key}`);
+    if (!isSafePublicAssetPath(config?.seo?.socialImage)) errors.push('seo.socialImage');
+    else {
+      const resolved = path.resolve(PUBLIC_DIR, config.seo.socialImage);
+      if (!resolved.startsWith(`${PUBLIC_DIR}${path.sep}`) || !existsSync(resolved)) errors.push('seo.socialImage');
     }
   }
   for (const key of ['site', 'base', 'publicUrl']) if (!text(config?.githubPages?.[key])) errors.push(`githubPages.${key}`);
@@ -91,6 +100,15 @@ export function loadProjectConfigSync(options) {
   const config = structuredClone(bundledConfig);
   const errors = validateProjectConfig(config, options);
   if (errors.length) throw new Error(`Invalid ithome.config.json fields: ${errors.join(', ')}`);
+  config.seo ??= {
+    siteName: config.publication.seriesTitle,
+    authorName: config.publication.account,
+    socialImage: config.brand.mark.light,
+  };
+  config.learningMap.sections = config.learningMap.sections.map((section) => ({
+    ...section,
+    articleContext: section.articleContext ?? section.description,
+  }));
   return Object.assign(config, {
     account: config.publication.account,
     seriesTitle: config.publication.seriesTitle,

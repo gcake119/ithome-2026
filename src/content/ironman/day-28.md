@@ -1,5 +1,6 @@
 ---
 title: "Day 28｜做產品之前，我現在會先看人怎麼工作"
+description: "在開始想功能以前，先觀察工作流程、所需資料、例外與完成標準，整理現在做產品時更靠前的思考起點。"
 day: 28
 section: "chapter-5"
 publishDate: 2026-10-06

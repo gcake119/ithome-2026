@@ -20,6 +20,12 @@ describe('iThome template setup schemaVersion 2', () => {
     expect(config.publication.schedule[29]).toEqual({ day: 30, date: '2026-09-30' });
     expect(config.learningMap.sections.map((item) => item.id)).toEqual(['foundation', 'practice', 'reflection']);
     expect(config.githubPages.publicUrl).toBe('https://example-user.github.io/my-ironman');
+    expect(config.seo).toEqual({
+      siteName: '我的三十天系列',
+      authorName: 'example-user',
+      socialImage: 'assets/ai-collaboration-mark.png',
+    });
+    expect(config.learningMap.sections.every((item) => item.articleContext)).toBe(true);
   });
 
   test('rejects ambiguous dates and secret-like values', () => {
@@ -85,7 +91,7 @@ describe('iThome template setup schemaVersion 2', () => {
   });
 
   test('full mode explains public asset mapping and validates existing defaults', async () => {
-    const answers = ['full', 'a', '系列', 'tag', 'contest', '2026-09-01', 'owner', 'repo', '', '', '', '', '', 'yes'];
+    const answers = ['full', 'a', '系列', 'tag', 'contest', '2026-09-01', 'owner', 'repo', '', '', '', '', '', '', '', '', 'yes'];
     const prompts = []; const written = [];
     const result = await runInteractiveSetup({
       ask: async (prompt) => { prompts.push(prompt); return answers.shift(); },
@@ -94,6 +100,7 @@ describe('iThome template setup schemaVersion 2', () => {
     expect(prompts.join('\n')).toContain('public/assets/series-mark.png');
     expect(prompts.join('\n')).toContain('不可使用網址、絕對路徑或 ../');
     expect(written[0].brand.mark.light).toBe('assets/ai-collaboration-mark.png');
+    expect(written[0].seo.socialImage).toBe('assets/ai-collaboration-mark.png');
     expect(result.status).toBe('configured');
   });
 });
