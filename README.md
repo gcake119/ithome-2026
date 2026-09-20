@@ -11,8 +11,37 @@
 - Day 1～30 的正式文章、標題、摘要與發布日期。
 - 鐵人賽以外的心得、補充文章與相關 Day 連結。
 - 網站標誌、圖示，以及 GitHub Pages 網址設定。
+- 搜尋結果短站名、公開作者名稱與社群分享預設圖片。
 
 不必修改發布程式才能填入內容。基本資料集中寫在 `ithome.config.json`，文章則放進下方兩個內容資料夾；推送到 GitHub 並啟用 Pages 後，GitHub Actions 會把它建置成公開網站。
+
+### Fork 後會取得的完整模板總覽
+
+這個 repo 不只是一組文章檔案，而是一套從內容撰寫、網站建置、檢查到選配發布自動化的模板。下表先說明 fork 後已經擁有什麼，以及哪些內容仍要換成自己的資料。
+
+| 模板範圍 | Fork 後已提供 | 使用者要填入或完成 | 是否會自動啟用 |
+| --- | --- | --- | --- |
+| 公開專案設定 | `ithome.config.json`、`ithome.config.example.json` 與互動式初始化精靈 | 公開帳號、系列名稱、Day 1 日期、GitHub repo、首頁文案、學習地圖、SEO 與品牌路徑 | 不會自動改成你的資料，必須執行 `pnpm ithome:setup` 或手動編輯 |
+| Day 1～30 文章 | 連續三十篇 Markdown 的檔名、frontmatter 格式與目前作者的實際文章 | 逐篇替換標題、摘要、日期、章節、公開狀態與正文 | 不會自動清空或改寫 |
+| 延伸閱讀 | 可選的延伸文章格式、獨立網址與關聯 Day 欄位 | 替換或新增自己的延伸文章；未完成時維持 `draft: true` | 範例預設不公開 |
+| 公開網站 | Astro 首頁、學習地圖、文章頁、延伸文章頁、響應式版型、亮色／暗色外觀 | 調整文案、顏色、字型或版面；不改外觀也能直接使用 | 執行建置後產生靜態網站 |
+| SEO 與內容探索 | Canonical URL、Open Graph、Twitter／X Card、JSON-LD、RSS、Sitemap | 填入短站名、公開作者、分享圖片與每篇文章摘要 | 由建置流程自動產生，但內容必須先正確填寫 |
+| 品牌素材 | favicon、Apple Touch Icon、亮色與暗色系列標誌範例 | 將 `public/` 內圖片換成自己的素材，並更新 `brand`、`seo.socialImage` 與替代文字 | 不會自動產生品牌圖片 |
+| 內容驗證 | 設定、文章結構、發布日期、網址、SEO、部署排程與 publisher 契約測試 | 執行 `pnpm test:ithome`、`pnpm check`、`pnpm build` | GitHub Pages workflow 會再次驗證 payload 並建置 |
+| GitHub Pages 部署 | `.github/workflows/deploy.yml`，支援 push、手動執行與每日建置 | 在 GitHub Settings 啟用 Pages，確認 repo 網址與權限 | Fork 後不會自行啟用 Pages；必須由 repo 擁有者設定 |
+| iThome payload | `ithome:prepare`，把單篇 Markdown 轉成可核對的標題、正文與同步連結 | 指定 Day 並人工檢查輸出 | 只產生資料，不會登入或發布 |
+| Codex 發布技能 | 專案內的 `$ithome-ironman-publisher` 技能、稽核／匯入／修復／發布流程與安全規則 | 在支援專案技能與 Computer Use 的 Codex 中明確選擇模式並授權操作 | 不會因為 fork、安裝或測試就操作 iThome |
+| 本機無人值守發布 | Playwright runner、專用 Chrome 契約、macOS 啟動器與 LaunchAgent 範例 | 在 repo 外建立專用 Chrome profile、登入、填入本機路徑、安裝排程並做真實驗收 | 預設未啟用；範例檔不能直接視為已安裝 |
+| 選配異常監控 | machine-readable event、bootstrap state、GitHub Pages 與公開系列 watchdog、Hermes 串接契約 | 另行安裝通知端、設定 repo 外憑證與驗收通知 | 預設未啟用，也不具備 iThome 操作權限 |
+| 維護與交接文件 | `PRODUCT.md`、`SECURITY.md`、`CONTRIBUTING.md` 與 `docs/handoff/` | 依自己的系列身分與實際部署狀態更新 | 只是規格與操作依據，不代表環境已完成設定 |
+
+可以把 repo 內的東西分成三類：
+
+1. **可直接沿用的結構**：網站版型、網址規則、SEO 產生器、RSS、Sitemap、測試、部署 workflow、publisher 安全流程。
+2. **一定要換成自己的公開內容**：正式設定、Day 1～30、延伸文章、首頁與學習地圖文案、作者名稱、品牌圖片及 SEO 摘要。
+3. **只提供範例、必須在 repo 外另外安裝的本機能力**：iThome 登入 session、專用 Chrome profile、LaunchAgent、本機事件目錄、Hermes 與 Telegram 等通知憑證。
+
+因此，fork 成功只代表取得完整模板，不代表已完成個人化、GitHub Pages 部署、iThome 登入、每日自動發布或異常通知。這些階段要分別設定與驗收。
 
 ### 正式設定與範例設定
 
@@ -23,14 +52,71 @@ Fork 會取得本 repo 已提交的全部文章和正式設定，這是預期行
 
 複製後請執行 `pnpm ithome:setup`，填入自己的帳號、系列、日期與 GitHub repo，再調整首頁文案及文章內容。兩份設定都只放公開資料，不能放密碼、金鑰或登入資訊。日後只修改自己的文案時，不需要同步修改範例；新增或移除設定欄位時，才需同步維護範例結構。
 
+### SEO 內容模板
+
+SEO 是「讓搜尋引擎與社群平台理解頁面內容的資訊」。Fork 後不需要自己撰寫 HTML 標籤；這個專案已把共用程式做好，使用者只要依序填入網站層、章節層與文章層的公開內容。
+
+| 層級 | Fork 後已有的模板 | 使用者要填入什麼 | 會出現在哪裡 |
+| --- | --- | --- | --- |
+| 網站 | `seo.siteName` | 適合顯示在搜尋結果與分頁標題的短站名 | 網頁標題、Open Graph 網站名稱 |
+| 網站 | `seo.authorName` | 對外公開的作者名稱 | 文章結構化資料 |
+| 網站 | `seo.socialImage` | `public/` 內已存在的預設分享圖片路徑 | Open Graph、Twitter／X 分享卡片 |
+| 章節 | `learningMap.sections[].articleContext` | 一句話說明這個章節在整個系列中的位置 | 單篇文章側欄 |
+| 主系列文章 | `title`、`description`、`publishDate`、`draft`、`day`、`section` | 每篇文章自己的標題、摘要、日期、公開狀態、Day 編號與章節 | 文章頁、搜尋結果、分享卡片、RSS、Sitemap |
+| 延伸文章 | `title`、`slug`、`description`、`publishDate`、`draft`、`relatedDays` | 延伸文章的公開資訊；`relatedDays` 可省略 | 延伸文章頁、搜尋結果、分享卡片、RSS、Sitemap |
+
+網站層資料寫在 `ithome.config.json`：
+
+```json
+"seo": {
+  "siteName": "我的三十天學習誌",
+  "authorName": "公開作者名稱",
+  "socialImage": "assets/my-series-cover.png"
+}
+```
+
+`socialImage` 是相對於 `public/` 的路徑，例如上面的設定必須有 `public/assets/my-series-cover.png`。圖片不存在或路徑離開 `public/` 時，設定檢查會停止，避免部署後才出現壞掉的分享圖片。
+
+文章層資料寫在每篇 Markdown 最上方的 frontmatter：
+
+```yaml
+---
+title: "Day 01｜文章標題"
+description: "用一至兩句話說清楚這篇文章處理的問題與讀者會得到什麼。"
+publishDate: 2026-09-01
+updatedDate: 2026-09-03 # 沒有更新時可以省略
+draft: true
+day: 1
+section: "foundation"
+---
+```
+
+填入以上內容後，網站會自動產生：
+
+- 每頁獨立的 `<title>` 與搜尋摘要。
+- Canonical URL，避免相同內容被當成多個不同頁面。
+- Open Graph 與 Twitter／X 分享卡片。
+- 首頁的 `WebSite` 與文章的 `BlogPosting` 結構化資料。
+- 只包含已公開文章的 RSS 與 Sitemap。
+
+建議依下列順序替換內容：
+
+1. 先改 `ithome.config.json` 的 `site`、`seo` 與 `brand`，完成全站共用資訊。
+2. 再改 `learningMap.sections`，決定章節 ID、首頁完整說明與文章側欄短說明。
+3. 逐篇替換 Day 1～30 的 `title`、`description`、日期、章節與正文；每篇 `description` 應描述自己的內容，不要重複貼上章節簡介。
+4. 有延伸文章時再填 `src/content/extensions/`；尚未完成的文章維持 `draft: true`。
+5. 執行 `pnpm test:ithome` 與 `pnpm build`，確認設定、文章及輸出的 SEO 資訊都能正常建置。
+
+請注意：Fork 會保留模板作者目前的正式 SEO 內容與三十篇文章，不會自動換成空白。`ithome.config.example.json` 提供的是可辨識的示意值；正式公開前仍要逐項換成自己的資訊。
+
 本專案把內容分成兩種：
 
 - `src/content/ironman/day-01.md`～`day-30.md`：鐵人賽主系列。Day 1～30 與日期必須連續，網址固定為 `/day/NN/`，也是 `ithome:prepare` 唯一會讀取的內容。
 - `src/content/extensions/*.md`：延伸閱讀。可以在任意日期發布，網址為 `/articles/<slug>/`，不占 Day 編號、不影響三十天進度，也不會進入 iThome publisher。
 
-`ithome.config.json` 使用 schemaVersion 2，集中設定系列名稱、首頁導言、可自訂的學習地圖章節、延伸閱讀標題、品牌資產與 GitHub Pages。學習地圖章節數量不限五個；文章以穩定的 `section` ID 對應章節。
+`ithome.config.json` 使用 schemaVersion 2，集中設定系列名稱、首頁導言、可自訂的學習地圖章節、延伸閱讀標題、品牌資產、SEO 與 GitHub Pages。`seo.siteName` 是搜尋結果使用的短站名，`seo.authorName` 是公開作者名稱，`seo.socialImage` 是 `public/` 底下的分享預設圖片。學習地圖章節數量不限五個；文章以穩定的 `section` ID 對應章節。章節的 `description` 用於首頁完整導讀，`articleContext` 則用於單篇文章側欄的一句話脈絡。
 
-目前文章都是清楚標示的開發期佔位內容，正式寫作前請完整替換。
+本 repo 會保留模板作者的正式文章；fork 後請逐篇換成自己的內容。`src/content/extensions/` 中標示為「範例」的文章預設為草稿，不會出現在網站、RSS 或 Sitemap。
 
 這是一個可以 fork 或下載後改成自己系列的模板。它採用「Codex Computer Use＋獨立 Playwright publisher」混合架構，目標是在保留安全檢查與人工救援能力的同時，讓正式安裝後的每日發布可以無人值守。
 
@@ -51,7 +137,7 @@ flowchart LR
     B[ithome.config.json<br/>公開設定與 30 天日期表] --> C
 
     C --> D[Astro]
-    D -->|GitHub Actions<br/>每天 09:15| E[GitHub Pages]
+    D -->|GitHub Actions<br/>每天 00:15| E[GitHub Pages]
 
     C --> F[獨立 Playwright<br/>本機 publisher]
     G[已登入 iThome 的<br/>專用 Chrome] <--> F
@@ -93,7 +179,7 @@ Codex Computer Use 可以看懂 iThome 畫面，適合在有人參與時稽核�
 2. 執行 `pnpm ithome:setup`，填入公開帳號、系列、Day 1 日期與 GitHub repo。
 3. 依初始化產生的日期表，把 Day 1～30 文章換成自己的內容。
 4. 執行 `pnpm test:ithome`、`pnpm build` 與 `pnpm ithome:prepare -- --day 1 --json`。
-5. 推送到 GitHub，啟用 GitHub Pages，確認 09:15 workflow 成功。
+5. 推送到 GitHub，啟用 GitHub Pages，確認每日 workflow 成功。
 6. 在 iThome 準備唯一且內容相符的草稿，再於 repo 外建立專用 Chrome profile，手動登入自己的 iThome。
 7. 另外安裝並驗收 09:30 本機 publisher 排程；repo 不會只靠 `pnpm install` 自動建立它。
 8. 需要異常 Telegram 通知時，再選配 Hermes。
@@ -125,7 +211,7 @@ pnpm install
 
 你必須明確提供 Day 1 的完整日期。程式不會從今天、文章順序或 iThome 畫面猜日期。
 
-執行前先準備以下 7 項公開資料：
+執行前先準備以下公開資料：
 
 | 要準備的資料 | 白話說明 | 範例 |
 | --- | --- | --- |
@@ -136,6 +222,9 @@ pnpm install
 | Day 1 日期 | 正式開賽第一天，格式必須是 YYYY-MM-DD | `2026-09-01` |
 | GitHub owner | 你的 GitHub 帳號或組織名稱 | `YOUR_GITHUB_NAME` |
 | GitHub repo | fork 後的 repo 名稱 | `YOUR_REPO` |
+| SEO 短站名 | 搜尋結果與分頁標題使用的簡短名稱 | `我的三十天學習誌` |
+| 公開作者名稱 | 寫入文章結構化資料的對外名稱 | `王小明` |
+| 預設分享圖片 | 已存在於 `public/` 的圖片路徑 | `assets/my-series-cover.png` |
 
 一般使用者建議直接執行互動式精靈：
 
@@ -143,7 +232,7 @@ pnpm install
 pnpm ithome:setup
 ```
 
-精靈會逐題詢問這 7 項資料，接著顯示 GitHub Pages 網址與完整 Day 1～30 日期表。只有最後回答 `yes` 或 `y` 才會寫入；回答其他內容會取消，不修改設定檔。精靈不會詢問密碼、cookie、token、Chrome profile 或登入 session。
+精靈會逐題詢問表中的資料，接著顯示 GitHub Pages 網址、搜尋與分享設定，以及完整 Day 1～30 日期表。只有最後回答 `yes` 或 `y` 才會寫入；回答其他內容會取消，不修改設定檔。精靈不會詢問密碼、cookie、token、Chrome profile 或登入 session。
 
 如果把 repo 交給 AI Agent，Agent 可以逐題向你詢問缺少的資料，再使用以下明確參數模式：
 
@@ -158,7 +247,7 @@ pnpm ithome:setup -- \
   --github-repo "YOUR_REPO"
 ```
 
-兩種模式都會產生相同的 `ithome.config.json`，並明確列出 Day 1～30 的每一天。它們可以用相同資料重跑；不會建立 cookie、登入資料、排程或秘密。請人工檢查設定檔，再把它與文章一起 commit。
+兩種模式都會產生完整的 `ithome.config.json`，並明確列出 Day 1～30 的每一天。互動式精靈會逐項詢問 SEO 資料；明確參數模式則預設以系列名稱作為 `seo.siteName`、iThome 帳號作為 `seo.authorName`，並使用模板的預設分享圖片。使用參數模式後，可以直接編輯 `ithome.config.json` 的 `seo` 區塊換成自己的內容。兩種模式都可以用相同資料重跑，也不會建立 cookie、登入資料、排程或秘密。請人工檢查設定檔，再把它與文章一起 commit。
 
 若使用 GitHub 使用者首頁 repo（repo 名稱剛好是 `帳號.github.io`），初始化器會使用空的 Pages base；一般 project Pages 則使用 `/<repo 名稱>`。
 
@@ -171,7 +260,6 @@ pnpm ithome:setup -- \
 title: "文章標題"
 description: "文章摘要"
 publishDate: 2026-09-01
-tags: [AI, Agent]
 draft: true
 day: 1
 section: "foundation"
@@ -180,7 +268,7 @@ section: "foundation"
 文章正文
 ```
 
-`day`、檔名、`publishDate` 與設定日期表必須吻合；`section` 必須是 `learningMap.sections` 中已設定的 ID。iThome 專用同步連結會在產生 payload 時加入，不要寫回 Markdown。
+`description` 是文章自己的短摘要，會同時顯示在文章標題下方，並提供搜尋結果、社群分享卡片與 RSS 使用；不要直接複製整章共用簡介。`day`、檔名、`publishDate` 與設定日期表必須吻合；`section` 必須是 `learningMap.sections` 中已設定的 ID。iThome 專用同步連結會在產生 payload 時加入，不要寫回 Markdown。
 
 延伸閱讀放在 `src/content/extensions/`：
 
@@ -216,7 +304,7 @@ pnpm ithome:prepare -- --day 1 --json
 3. 在 **Build and deployment** 選擇 **GitHub Actions**。
 4. 手動執行一次 `Deploy to GitHub Pages` workflow，確認成功且網址與 `ithome.config.json` 一致。
 
-workflow 也會每天在 Asia／Taipei 09:15 建置。測試通過不等於已部署；必須看到 GitHub Actions 成功與實際公開頁面。
+workflow 也會每天在 Asia／Taipei 00:15 建置，讓當日文章網址、RSS 與 Sitemap 一起更新。測試通過不等於已部署；必須看到 GitHub Actions 成功與實際公開頁面。
 
 GitHub Pages 的網站外觀可以自行修改，例如顏色、字型、首頁排版、文章版型與導覽列。常見檔案位於 `src/layouts/`、`src/pages/` 與 `src/styles/`（如有）。只改網站樣式不會改變 iThome publisher 使用的文章內容。
 
