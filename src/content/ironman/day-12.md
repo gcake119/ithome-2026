@@ -1,7 +1,7 @@
 ---
 title: "Day 12｜原來我在做翻譯"
 day: 12
-section: "chapter-2"
+section: "chapter-3"
 publishDate: 2026-09-20
 draft: false
 ---
