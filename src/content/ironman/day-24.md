@@ -1,5 +1,6 @@
 ---
 title: "Day 24｜我不逐行讀程式碼，那我要怎麼知道 AI 做對了？"
+description: "整理規格、實作證據、測試、AI review 與人工操作等多層驗證，說明如何在無法逐行讀碼時逐步建立信任。"
 day: 24
 section: "chapter-4"
 publishDate: 2026-10-02

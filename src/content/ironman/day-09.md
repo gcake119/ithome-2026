@@ -1,5 +1,6 @@
 ---
 title: "Day 9｜系統知道怎麼做，不代表使用者就該這樣做"
+description: "從把系統步驟直接變成使用者流程的失敗經驗，說明系統怎麼處理與人要怎麼完成工作是兩個不同問題。"
 day: 9
 section: "chapter-2"
 publishDate: 2026-09-17

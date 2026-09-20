@@ -1,5 +1,6 @@
 ---
 title: "Day 13｜聽他怎麼說，也看他怎麼做"
+description: "說明面對陌生行政流程時，如何先訪談、再觀察實際操作，最後把零散步驟整理成可討論的工作流程圖。"
 day: 13
 section: "chapter-3"
 publishDate: 2026-09-21

@@ -1,5 +1,6 @@
 ---
 title: "Day 1｜做得出來，卻完全改不動"
+description: "從靠 ChatGPT 做出網站卻完全改不動的經驗出發，整理 AI 降低實作門檻後，開發新手仍需要補上的理解與判斷。"
 day: 1
 section: "chapter-1"
 publishDate: 2026-09-09

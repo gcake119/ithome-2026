@@ -1,5 +1,6 @@
 ---
 title: "Day 3｜功能是從觀察和許願長出來的"
+description: "從觀察諮商所實際工作與提出改善願望開始，回看預約管理產品的需求與功能如何一個一個長出來。"
 day: 3
 section: "chapter-2"
 publishDate: 2026-09-11

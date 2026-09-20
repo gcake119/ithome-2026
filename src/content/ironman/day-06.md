@@ -1,5 +1,6 @@
 ---
 title: "Day 6｜把反覆確認的工作交給系統之後"
+description: "從預約背後的固定確認與例外判斷，說明系統適合接手哪些工作，以及自動化與順手完成工作之間的差距。"
 day: 6
 section: "chapter-2"
 publishDate: 2026-09-14

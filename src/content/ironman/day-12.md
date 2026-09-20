@@ -1,5 +1,6 @@
 ---
 title: "Day 12｜原來我在做翻譯"
+description: "從陌生行政委託案出發，整理如何把現場工作翻譯成工程可處理的問題，以及第一個產品留下的可轉移能力。"
 day: 12
 section: "chapter-3"
 publishDate: 2026-09-20

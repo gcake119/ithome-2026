@@ -1,5 +1,6 @@
 ---
 title: "Day 10｜我以為功能做完，產品就完成了"
+description: "回顧功能都能運作卻仍撤回上線的預約產品，說明完成標準、日常可用性與功能清單之間的差異。"
 day: 10
 section: "chapter-2"
 publishDate: 2026-09-18

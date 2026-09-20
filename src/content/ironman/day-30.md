@@ -1,5 +1,6 @@
 ---
 title: "Day 30｜AI 都會寫程式了，Coding 到底要懂多深？"
+description: "回到 AI 已能大量寫程式後 Coding 要懂多深的核心問題，區分系統理解與程式理解，並保留尚未回答的學習方向。"
 day: 30
 section: "chapter-5"
 publishDate: 2026-10-08

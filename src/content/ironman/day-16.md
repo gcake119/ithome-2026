@@ -1,5 +1,6 @@
 ---
 title: "Day 16｜以終為始：思考產品功能"
+description: "以工作終點反推畫面、資料、操作與完成條件，說明如何用「以終為始」設計真正幫人完成工作的產品功能。"
 day: 16
 section: "chapter-3"
 publishDate: 2026-09-24

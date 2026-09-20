@@ -21,6 +21,11 @@
       "summary": "在這裡說明系列主題、適合的讀者，以及讀完後可以學到什麼。"
     }
   },
+  "seo": {
+    "siteName": "我的三十天學習誌",
+    "authorName": "公開作者名稱",
+    "socialImage": "assets/ai-collaboration-mark.png"
+  },
   "learningMap": {
     "title": "學習地圖標題",
     "description": "在這裡說明學習地圖的安排與建議閱讀順序。",
@@ -30,17 +35,20 @@
       {
         "id": "foundation",
         "title": "第一階段標題",
-        "description": "在這裡說明第一階段的學習重點與涵蓋內容。"
+        "description": "在這裡說明第一階段的學習重點與涵蓋內容。",
+        "articleContext": "在單篇文章側欄用一句話交代目前的閱讀階段。"
       },
       {
         "id": "practice",
         "title": "第二階段標題",
-        "description": "在這裡說明第二階段的學習重點與涵蓋內容。"
+        "description": "在這裡說明第二階段的學習重點與涵蓋內容。",
+        "articleContext": "在單篇文章側欄用一句話交代目前的閱讀階段。"
       },
       {
         "id": "reflection",
         "title": "第三階段標題",
-        "description": "在這裡說明第三階段的學習重點與涵蓋內容。"
+        "description": "在這裡說明第三階段的學習重點與涵蓋內容。",
+        "articleContext": "在單篇文章側欄用一句話交代目前的閱讀階段。"
       }
     ]
   },

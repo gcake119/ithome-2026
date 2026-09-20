@@ -1,5 +1,6 @@
 ---
 title: "Day 18｜系統分工之後，怎麼讓不同部分一起工作"
+description: "整理前端、後端與文件服務拆成多個 repo 後，如何用共同規格與 Coordination repo 維持完整產品脈絡。"
 day: 18
 section: "chapter-3"
 publishDate: 2026-09-26

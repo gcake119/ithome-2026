@@ -5,8 +5,13 @@ import { describe, expect, test } from 'vitest';
 import { prepareIthomePayload } from './prepare.mjs';
 
 describe('iThome payload contract', () => {
-  test.each([1, 2, 3, 4, 5, 6])('Day %i fails closed until explicit setup is complete', async (day) => {
-    await expect(prepareIthomePayload(day)).rejects.toThrow(/initialized|day1Date|schedule/);
+  test.each([1, 2, 3, 4, 5, 6])('Day %i fails closed without an explicit schedule entry', async (day) => {
+    const project = {
+      schedule: [],
+      githubPages: { publicUrl: 'https://example.github.io/series' },
+    };
+
+    await expect(prepareIthomePayload(day, { project })).rejects.toThrow(/explicit schedule/);
   });
 
   test('preserves payload shape and reads only an explicit Ironman Day', async () => {

@@ -1,5 +1,6 @@
 ---
 title: "Day 11｜看到 n8n 時，我以為找到做預約系統的方法了"
+description: "以 n8n 預約流程為例，說明當需求從自動化轉為狀態管理時，真正需要改變的是問題框架，而不只是工具設定。"
 day: 11
 section: "chapter-2"
 publishDate: 2026-09-19

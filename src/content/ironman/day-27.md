@@ -1,5 +1,6 @@
 ---
 title: "Day 27｜主要流程走得通，還有哪些地方我沒驗到？"
+description: "回看人工 UI 驗收能確認哪些主要流程，又會漏掉哪些例外，並坦率整理目前在完整 QA 能力上的缺口。"
 day: 27
 section: "chapter-4"
 publishDate: 2026-10-05

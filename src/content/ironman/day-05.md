@@ -1,5 +1,6 @@
 ---
 title: "Day 5｜做自己的系統，不代表什麼都要自己做"
+description: "整理 Google Calendar、Sheets、Drive 與 Gmail 等成熟工具如何補上產品能力，也看見工具串接不等於工作流程順暢。"
 day: 5
 section: "chapter-2"
 publishDate: 2026-09-13

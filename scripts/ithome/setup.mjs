@@ -8,12 +8,13 @@ const REQUIRED = ['account', 'series-title', 'contest-tag', 'contest', 'day1-dat
 export const DEFAULT_TEMPLATE = {
   site: { tagline: '一份陪你完成三十天挑戰的學習誌', home: { kicker: '從第一天開始，建立自己的學習路線', lead: '每天完成一個主題，也保留回頭整理與延伸探索的空間。', summary: '這裡收錄完整的三十天鐵人賽文章，並在賽後持續補充心得與實作筆記。' } },
   learningMap: { title: '三十天學習地圖', description: '依照自己的速度，從基礎一路走到回顧與整合。', sectionHeading: '先看懂這趟路怎麼走', sectionLabel: '階段', sections: [
-    { id: 'foundation', title: '建立基礎', description: '先理解題目、工具與合作方式。' },
-    { id: 'practice', title: '開始實作', description: '把觀念帶進可驗證的小型任務。' },
-    { id: 'reflection', title: '整理與延伸', description: '回顧做法，建立可以繼續使用的方法。' },
+    { id: 'foundation', title: '建立基礎', description: '先理解題目、工具與合作方式。', articleContext: '先建立閱讀後續內容需要的共同基礎。' },
+    { id: 'practice', title: '開始實作', description: '把觀念帶進可驗證的小型任務。', articleContext: '把觀念帶進可以觀察與驗證的實作。' },
+    { id: 'reflection', title: '整理與延伸', description: '回顧做法，建立可以繼續使用的方法。', articleContext: '整理實作經驗，留下可以繼續使用的方法。' },
   ] },
   extensions: { enabled: true, title: '延伸閱讀', description: '鐵人賽以外的心得、補充與後續實作。' },
   brand: { mark: { light: 'assets/ai-collaboration-mark.png', dark: 'assets/ai-collaboration-mark-dark.png', alt: 'iThome 鐵人賽系列標誌' }, favicon: 'favicon.png', appleTouchIcon: 'apple-touch-icon.png' },
+  seo: { siteName: '三十天學習誌', authorName: '公開作者名稱', socialImage: 'assets/ai-collaboration-mark.png' },
 };
 const secretPattern = /-----BEGIN [A-Z ]*PRIVATE KEY-----|(?:password|cookie|token|session|telegram)[=:]\s*\S+/i;
 function validDate(value) { if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? '')) return false; const date = new Date(`${value}T00:00:00.000Z`); return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value; }
@@ -34,6 +35,7 @@ export function buildProjectConfig(input) {
     publication: { type: 'ithome-ironman', totalDays: 30, account: input.account.trim(), seriesTitle: input.seriesTitle.trim(), contestTag: input.contestTag.trim(), contest: input.contest.trim(), repository: `${input.githubOwner}/${input.githubRepo}`, seriesKey: input.githubRepo, day1Date: input.day1Date, schedule: Array.from({ length: 30 }, (_, index) => ({ day: index + 1, date: addDays(input.day1Date, index) })) },
     site: input.site ?? template.site, learningMap: input.learningMap ?? template.learningMap,
     extensions: input.extensions ?? template.extensions, brand: input.brand ?? template.brand,
+    seo: input.seo ?? { ...template.seo, siteName: input.seriesTitle.trim(), authorName: input.account.trim() },
     githubPages: { site: siteUrl, base, publicUrl: `${siteUrl}${base}` },
   };
   const errors = validateProjectConfig(config, { requireInitialized: true });
@@ -80,6 +82,9 @@ export async function runInteractiveSetup({ ask, output, write = (config) => wri
     const template = structuredClone(DEFAULT_TEMPLATE);
     template.site.tagline = await askValue({ ask, output, prompt: `網站副標（必填）\n例如：一份陪你完成三十天挑戰的學習誌。\n直接按 Enter 使用：${template.site.tagline}\n請輸入：`, defaultValue: template.site.tagline });
     template.learningMap.title = await askValue({ ask, output, prompt: `學習地圖名稱（必填）\n例如：三十天學習地圖。\n直接按 Enter 使用：${template.learningMap.title}\n請輸入：`, defaultValue: template.learningMap.title });
+    template.seo.siteName = await askValue({ ask, output, prompt: `搜尋結果使用的短站名（必填）\n例如：我的三十天學習誌。\n直接按 Enter 使用：${template.seo.siteName}\n請輸入：`, defaultValue: template.seo.siteName });
+    template.seo.authorName = await askValue({ ask, output, prompt: `公開作者名稱（必填）\n會出現在文章結構化資料中；請勿填入非公開個資。\n直接按 Enter 使用：${template.seo.authorName}\n請輸入：`, defaultValue: template.seo.authorName });
+    template.seo.socialImage = await askAsset({ ask, output, label: '搜尋與社群分享預設圖片', defaultValue: template.seo.socialImage, publicDir });
     template.brand.mark.light = await askAsset({ ask, output, label: '亮色模式標誌', defaultValue: template.brand.mark.light, publicDir });
     template.brand.mark.dark = await askAsset({ ask, output, label: '暗色模式標誌', defaultValue: template.brand.mark.dark, publicDir });
     template.brand.mark.alt = await askValue({ ask, output, prompt: `標誌文字說明（必填）\n提供給螢幕閱讀器，例如：我的鐵人賽系列標誌。\n直接按 Enter 使用：${template.brand.mark.alt}\n請輸入：`, defaultValue: template.brand.mark.alt });
@@ -91,6 +96,7 @@ export async function runInteractiveSetup({ ask, output, write = (config) => wri
   output('【網站與學習地圖】'); output(`網站副標：${config.site.tagline}`); output(`學習地圖：${config.learningMap.title}`); output(`章節數：${config.learningMap.sections.length}`); config.learningMap.sections.forEach((section) => output(`－${section.title}`));
   output('【延伸閱讀】'); output(`${config.extensions.enabled ? '已啟用' : '未啟用'}：${config.extensions.title}`);
   output('【品牌資產】'); output(`亮色標誌：public/${config.brand.mark.light}`); output(`暗色標誌：public/${config.brand.mark.dark}`); output(`標誌文字說明：${config.brand.mark.alt}`);
+  output('【搜尋與分享】'); output(`短站名：${config.seo.siteName}`); output(`公開作者：${config.seo.authorName}`); output(`預設圖片：public/${config.seo.socialImage}`);
   output('【GitHub Pages】'); output(config.githubPages.publicUrl);
   const confirmed = (await ask('以上資料正確並寫入 ithome.config.json？（yes／no）：')).trim().toLowerCase();
   if (!['yes', 'y'].includes(confirmed)) { output('已取消，沒有修改設定檔。'); return { status: 'cancelled' }; }

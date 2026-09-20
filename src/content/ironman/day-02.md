@@ -1,5 +1,6 @@
 ---
 title: "Day 2｜當實作跑得比理解更快"
+description: "透過 n8n 與第一個產品的卡關經驗，說明 AI 如何讓學習順序變成先做、先遇到問題，再逐漸學會描述問題。"
 day: 2
 section: "chapter-1"
 publishDate: 2026-09-10

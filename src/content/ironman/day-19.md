@@ -1,5 +1,6 @@
 ---
 title: "Day 19｜把「為什麼這樣決定」也留下來"
+description: "說明為什麼工程決策不只要記錄結果，也要保留當時的限制、取捨與理由，讓後續修改仍能理解原本判斷。"
 day: 19
 section: "chapter-3"
 publishDate: 2026-09-27

@@ -1,5 +1,6 @@
 ---
 title: "Day 26｜功能做對了，實作方式也對嗎？"
+description: "從設計一致性、系統整合與對抗式 review 三個角度，檢查功能不只做對，也用適合既有系統的方式完成。"
 day: 26
 section: "chapter-4"
 publishDate: 2026-10-04

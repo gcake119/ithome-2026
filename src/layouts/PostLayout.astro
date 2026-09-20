@@ -14,7 +14,13 @@ const base = import.meta.env.BASE_URL;
 const shortTitle = post.data.title.replace(/^Day\s*\d+｜/, '');
 const lastRead = { day: post.data.day, title: shortTitle, href: `${base}${dayPath(post.data.day).slice(1)}` };
 ---
-<BaseLayout title={post.data.title} description={post.data.description ?? post.data.title}>
+<BaseLayout
+  title={post.data.title}
+  description={post.data.description}
+  pageType="article"
+  publishedTime={post.data.publishDate.toISOString()}
+  modifiedTime={post.data.updatedDate?.toISOString()}
+>
   <div class="reader-layout">
     <aside class="series-sidebar">
       <a class="sidebar-brand" href={base}>
@@ -24,7 +30,7 @@ const lastRead = { day: post.data.day, title: shortTitle, href: `${base}${dayPat
 
       <div class="sidebar-heading">
         <h2><a href={base}>第 {post.data.day} 天，共 {publication.totalDays} 天</a></h2>
-        <p>你正在「{section?.title}」，可以隨時從下方切換文章。</p>
+        <p>{section?.articleContext ?? `你正在「${section?.title}」，可以隨時從下方切換文章。`}</p>
         <div class="reading-progress" role="progressbar" aria-label={`${publication.totalDays} 天系列閱讀進度`} aria-valuemin="1" aria-valuemax={publication.totalDays} aria-valuenow={post.data.day}>
           <span style={`--progress: ${(post.data.day / publication.totalDays) * 100}%`}></span>
         </div>
@@ -74,8 +80,8 @@ const lastRead = { day: post.data.day, title: shortTitle, href: `${base}${dayPat
     </aside>
 
     <main class="reading-pane"><article class="article-shell">
-      <div class="article-meta"><span class="article-day">Day {String(post.data.day).padStart(2, '0')}</span><span>{section?.title}</span><time>{post.data.publishDate.toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' })}</time></div>
-      <h1>{shortTitle}</h1><p class="part-title">{section?.description}</p><div class="prose"><slot /></div>
+      <div class="article-meta"><span class="article-day">Day {String(post.data.day).padStart(2, '0')}</span><span>{section?.title}</span><time datetime={post.data.publishDate.toISOString().slice(0, 10)}>{post.data.publishDate.toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' })}</time></div>
+      <h1>{shortTitle}</h1><p class="part-title">{post.data.description}</p><div class="prose"><slot /></div>
       {post.data.ithomeUrl && <p class="ithome-link"><a href={post.data.ithomeUrl}>在 iThome 閱讀同步版本 ↗</a></p>}
       <nav class="post-nav" aria-label="文章導覽"><div>{previous && <a href={`${base}${dayPath(previous.data.day).slice(1)}`}><small>← 上一篇</small><strong>{previous.data.title.replace(/^Day\s*\d+｜/, '')}</strong></a>}</div><div>{next && <a href={`${base}${dayPath(next.data.day).slice(1)}`}><small>下一篇 →</small><strong>{next.data.title.replace(/^Day\s*\d+｜/, '')}</strong></a>}</div></nav>
     </article></main>

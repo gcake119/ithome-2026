@@ -1,5 +1,6 @@
 ---
 title: "Day 25｜用測試約束 AI 改程式"
+description: "說明測試如何保存已知期待、約束 Agent 後續修改，以及為什麼測試通過不等於所有問題都已被驗證。"
 day: 25
 section: "chapter-4"
 publishDate: 2026-10-03
