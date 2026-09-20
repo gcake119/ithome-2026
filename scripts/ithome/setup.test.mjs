@@ -2,7 +2,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { buildProjectConfig, runInteractiveSetup, writeProjectConfig } from './setup.mjs';
+import { buildProjectConfig, runInteractiveSetup, runNonInteractiveSetup, writeProjectConfig } from './setup.mjs';
 import { isSafePublicAssetPath, validateProjectConfig } from './config.mjs';
 
 const input = {
@@ -102,5 +102,64 @@ describe('iThome template setup schemaVersion 2', () => {
     expect(written[0].brand.mark.light).toBe('assets/ai-collaboration-mark.png');
     expect(written[0].seo.socialImage).toBe('assets/ai-collaboration-mark.png');
     expect(result.status).toBe('configured');
+  });
+
+  test('Agent preview returns the complete candidate without writing', async () => {
+    const written = [];
+    const result = await runNonInteractiveSetup([
+      '--', '--preview',
+      '--account', 'example-user',
+      '--series-title', '我的三十天系列',
+      '--contest-tag', '18th鐵人賽',
+      '--contest', '18th-ironman-2026',
+      '--day1-date', '2026-09-01',
+      '--github-owner', 'example-user',
+      '--github-repo', 'my-ironman',
+      '--site-tagline', '從問題到作品的三十天',
+      '--home-kicker', '2026 iThome 鐵人賽',
+      '--home-lead', '這是首頁導言。',
+      '--home-summary', '這是首頁摘要。',
+      '--seo-site-name', '三十天 Agent 實作誌',
+      '--seo-author-name', '公開作者',
+      '--seo-social-image', 'assets/ai-collaboration-mark.png',
+      '--brand-light', 'assets/ai-collaboration-mark.png',
+      '--brand-dark', 'assets/ai-collaboration-mark-dark.png',
+      '--brand-alt', '系列標誌',
+    ], { write: async (config) => written.push(config) });
+
+    expect(result.status).toBe('preview');
+    expect(result.config.site).toMatchObject({
+      tagline: '從問題到作品的三十天',
+      home: { kicker: '2026 iThome 鐵人賽', lead: '這是首頁導言。', summary: '這是首頁摘要。' },
+    });
+    expect(result.config.seo).toEqual({
+      siteName: '三十天 Agent 實作誌', authorName: '公開作者', socialImage: 'assets/ai-collaboration-mark.png',
+    });
+    expect(result.config.brand.mark).toMatchObject({
+      light: 'assets/ai-collaboration-mark.png', dark: 'assets/ai-collaboration-mark-dark.png', alt: '系列標誌',
+    });
+    expect(written).toHaveLength(0);
+  });
+
+  test('Agent write requires the explicit --write action', async () => {
+    const args = [
+      '--write', '--account', 'example-user', '--series-title', '我的三十天系列',
+      '--contest-tag', '18th鐵人賽', '--contest', '18th-ironman-2026',
+      '--day1-date', '2026-09-01', '--github-owner', 'example-user', '--github-repo', 'my-ironman',
+    ];
+    const written = [];
+    const result = await runNonInteractiveSetup(args, { write: async (config) => written.push(config) });
+    expect(result.status).toBe('configured');
+    expect(written).toHaveLength(1);
+
+    await expect(runNonInteractiveSetup(args.slice(1), { write: async () => {} }))
+      .rejects.toThrow(/--preview|--write/);
+  });
+
+  test('Agent check reports whether the current config is complete', async () => {
+    await expect(runNonInteractiveSetup(['--', '--check'], { load: async () => buildProjectConfig(input) }))
+      .resolves.toMatchObject({ status: 'configured', errors: [] });
+    await expect(runNonInteractiveSetup(['--check'], { load: async () => ({ schemaVersion: 2, initialized: false }) }))
+      .resolves.toMatchObject({ status: 'incomplete' });
   });
 });

@@ -22,7 +22,15 @@ pnpm ithome:prepare -- --day 5 --json
 
 `ithome:prepare` 不會開瀏覽器，也不會對 iThome 發出任何 request。
 
-第一次使用前，必須先執行 README 所列的 `pnpm ithome:setup`。未帶參數時會啟動互動式 CLI 精靈；精靈提供 quick 與 full 模式，每題都會提示格式、範例、預設值或 `public/` 相對路徑。Agent／自動化可傳入完整參數。未完成公開身分、Day 1 日期、30 天日期表與 Pages 網址設定時，payload 會 fail closed。
+第一次使用前，必須先執行 README 所列的 `pnpm ithome:setup`。未帶參數時會啟動互動式 CLI 精靈；精靈提供 quick 與 full 模式，每題都會提示格式、範例、預設值或 `public/` 相對路徑。
+
+Agent／自動化必須明確選擇一個動作：
+
+- `--preview`：驗證完整參數並輸出候選設定，不寫檔。
+- `--write`：使用已確認的相同參數寫入 `ithome.config.json`。
+- `--check`：唯讀檢查目前正式設定，回報 `configured` 或 `incomplete`。
+
+非互動模式可傳入首頁、SEO 與品牌參數；未指定時使用安全的模板預設值。`--preview`、`--write` 與 `--check` 必須擇一，避免 Agent 未經預覽直接覆寫設定。未完成公開身分、Day 1 日期、30 天日期表與 Pages 網址設定時，payload 會 fail closed。
 
 主系列只讀取 `src/content/ironman/day-NN.md`。位於 `src/content/extensions/` 的延伸閱讀不屬於 Day 1～30，不得進入 payload、草稿 inventory 或 publisher。
 

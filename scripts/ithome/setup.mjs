@@ -1,10 +1,17 @@
 #!/usr/bin/env node
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
 import { CONFIG_PATH, PUBLIC_DIR, publicAssetStatus, saveProjectConfig, validateProjectConfig } from './config.mjs';
 
 const REQUIRED = ['account', 'series-title', 'contest-tag', 'contest', 'day1-date', 'github-owner', 'github-repo'];
+const OPTIONAL = [
+  'site-tagline', 'home-kicker', 'home-lead', 'home-summary',
+  'seo-site-name', 'seo-author-name', 'seo-social-image',
+  'brand-light', 'brand-dark', 'brand-alt', 'favicon', 'apple-touch-icon',
+];
+const ACTIONS = new Set(['preview', 'write', 'check']);
 export const DEFAULT_TEMPLATE = {
   site: { tagline: '一份陪你完成三十天挑戰的學習誌', home: { kicker: '從第一天開始，建立自己的學習路線', lead: '每天完成一個主題，也保留回頭整理與延伸探索的空間。', summary: '這裡收錄完整的三十天鐵人賽文章，並在賽後持續補充心得與實作筆記。' } },
   learningMap: { title: '三十天學習地圖', description: '依照自己的速度，從基礎一路走到回顧與整合。', sectionHeading: '先看懂這趟路怎麼走', sectionLabel: '階段', sections: [
@@ -45,9 +52,56 @@ export function buildProjectConfig(input) {
 export async function writeProjectConfig(target, config) { await saveProjectConfig(target, config); }
 export function parseSetupArgs(argv) {
   const values = {};
-  for (let index = 0; index < argv.length; index += 1) { const token = argv[index]; if (!token.startsWith('--')) throw new Error(`Unknown argument: ${token}`); const key = token.slice(2); if (!REQUIRED.includes(key)) throw new Error(`Unknown argument: ${token}`); const value = argv[++index]; if (!value || value.startsWith('--')) throw new Error(`Missing value for ${token}`); values[key] = value; }
+  const allowed = new Set([...REQUIRED, ...OPTIONAL]);
+  for (let index = 0; index < argv.length; index += 1) { const token = argv[index]; if (!token.startsWith('--')) throw new Error(`Unknown argument: ${token}`); const key = token.slice(2); if (!allowed.has(key)) throw new Error(`Unknown argument: ${token}`); const value = argv[++index]; if (!value || value.startsWith('--')) throw new Error(`Missing value for ${token}`); if (safePublicText(value)) throw new Error(safePublicText(value)); values[key] = value; }
   for (const key of REQUIRED) if (!values[key]) throw new Error(`--${key} is required`);
-  return { account: values.account, seriesTitle: values['series-title'], contestTag: values['contest-tag'], contest: values.contest, day1Date: values['day1-date'], githubOwner: values['github-owner'], githubRepo: values['github-repo'] };
+  const template = structuredClone(DEFAULT_TEMPLATE);
+  if (values['site-tagline']) template.site.tagline = values['site-tagline'];
+  if (values['home-kicker']) template.site.home.kicker = values['home-kicker'];
+  if (values['home-lead']) template.site.home.lead = values['home-lead'];
+  if (values['home-summary']) template.site.home.summary = values['home-summary'];
+  if (values['seo-site-name']) template.seo.siteName = values['seo-site-name'];
+  else template.seo.siteName = values['series-title'];
+  if (values['seo-author-name']) template.seo.authorName = values['seo-author-name'];
+  else template.seo.authorName = values.account;
+  if (values['seo-social-image']) template.seo.socialImage = values['seo-social-image'];
+  if (values['brand-light']) template.brand.mark.light = values['brand-light'];
+  if (values['brand-dark']) template.brand.mark.dark = values['brand-dark'];
+  if (values['brand-alt']) template.brand.mark.alt = values['brand-alt'];
+  if (values.favicon) template.brand.favicon = values.favicon;
+  if (values['apple-touch-icon']) template.brand.appleTouchIcon = values['apple-touch-icon'];
+  return {
+    account: values.account, seriesTitle: values['series-title'], contestTag: values['contest-tag'],
+    contest: values.contest, day1Date: values['day1-date'], githubOwner: values['github-owner'],
+    githubRepo: values['github-repo'], ...template,
+  };
+}
+
+function parseNonInteractiveCommand(argv) {
+  const actionTokens = new Set([...ACTIONS].map((action) => `--${action}`));
+  const actions = argv.filter((token) => actionTokens.has(token)).map((token) => token.slice(2));
+  if (actions.length !== 1) throw new Error('Choose exactly one action: --preview, --write, or --check.');
+  const action = actions[0];
+  const remaining = argv.filter((token) => !actionTokens.has(token));
+  if (action === 'check' && remaining.length > 0) throw new Error('--check does not accept setup values.');
+  return { action, remaining };
+}
+
+export async function runNonInteractiveSetup(argv, {
+  write = (config) => writeProjectConfig(CONFIG_PATH, config),
+  load = async () => JSON.parse(await readFile(CONFIG_PATH, 'utf8')),
+} = {}) {
+  const normalizedArgv = argv[0] === '--' ? argv.slice(1) : argv;
+  const { action, remaining } = parseNonInteractiveCommand(normalizedArgv);
+  if (action === 'check') {
+    const config = await load();
+    const errors = validateProjectConfig(config, { requireInitialized: true });
+    return { status: errors.length === 0 ? 'configured' : 'incomplete', errors };
+  }
+  const config = buildProjectConfig(parseSetupArgs(remaining));
+  if (action === 'preview') return { status: 'preview', config };
+  await write(config);
+  return { status: 'configured', config };
 }
 async function askValue({ ask, output, prompt, validate = required, defaultValue }) {
   while (true) {
@@ -110,7 +164,13 @@ async function main() {
     try { await runInteractiveSetup({ ask: (prompt) => terminal.question(prompt), output: (line) => process.stdout.write(`${line}\n`) }); } finally { terminal.close(); }
     return;
   }
-  const config = buildProjectConfig(parseSetupArgs(argv)); await writeProjectConfig(CONFIG_PATH, config);
-  process.stdout.write(`${JSON.stringify({ status: 'configured', path: resolve(CONFIG_PATH), publicUrl: config.githubPages.publicUrl, day1Date: config.publication.day1Date, day30Date: config.publication.schedule[29].date }, null, 2)}\n`);
+  const result = await runNonInteractiveSetup(argv);
+  if (result.status === 'incomplete') process.exitCode = 2;
+  const summary = result.config ? {
+    status: result.status, path: resolve(CONFIG_PATH), publicUrl: result.config.githubPages.publicUrl,
+    day1Date: result.config.publication.day1Date, day30Date: result.config.publication.schedule[29].date,
+    ...(result.status === 'preview' ? { config: result.config } : {}),
+  } : result;
+  process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
 }
 if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) main().catch((error) => { process.stderr.write(`[ithome:setup] ${error.message}\n`); process.exitCode = 1; });
