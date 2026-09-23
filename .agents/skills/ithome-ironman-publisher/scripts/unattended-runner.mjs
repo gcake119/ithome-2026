@@ -3,6 +3,28 @@
 import { createHash, randomUUID } from 'node:crypto';
 
 const ALLOWED_STATUSES = new Set(['verified', 'blocked', 'failed', 'uncertain']);
+const RETRYABLE_PRE_CLICK_REASONS = new Set([
+  'anti_automation',
+  'cloudflare',
+  'captcha',
+  'rate_limited',
+  'login_required',
+  'browser_driver_failed',
+  'draft_scan_incomplete',
+  'public_scan_incomplete',
+]);
+
+function retryablePreClickOutcome(outcome, expectedFingerprint) {
+  return ['blocked', 'failed'].includes(outcome?.status)
+    && outcome.fingerprint === expectedFingerprint
+    && outcome.result?.publishClickCount === 0
+    && outcome.result?.publicVerification === 'not_started'
+    && RETRYABLE_PRE_CLICK_REASONS.has(outcome.result.reasonCode);
+}
+
+function defaultSleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function fingerprint(payload) {
   return `sha256:${createHash('sha256').update(JSON.stringify(payload)).digest('hex')}`;
@@ -44,6 +66,9 @@ const PHASE_BY_REASON = new Map([
   ['series_bootstrap_missing', 'bootstrap_preflight'],
   ['series_bootstrap_invalid', 'bootstrap_preflight'],
   ['anti_automation', 'browser_session'],
+  ['cloudflare', 'browser_session'],
+  ['captcha', 'browser_session'],
+  ['rate_limited', 'browser_session'],
   ['login_required', 'browser_session'],
   ['unexpected_account', 'browser_session'],
   ['browser_driver_failed', 'browser_connection'],
@@ -99,10 +124,12 @@ async function complete(result, event, emit) {
   }
 }
 
-export async function runUnattendedPublisher({ day, prepare, publish, emit, project, now = () => new Date().toISOString(), runId = `local-publisher-${randomUUID()}` }) {
+export async function runUnattendedPublisher({ day, prepare, publish, emit, project, now = () => new Date().toISOString(), runId = `local-publisher-${randomUUID()}`, maxAttempts = 1, retryDelayMs = 300_000, sleep = defaultSleep }) {
   if (!Number.isInteger(day) || day < 1 || day > 30) throw new Error('day must be an integer from 1 to 30');
   if (![prepare, publish, emit].every((value) => typeof value === 'function')) throw new Error('prepare, publish, and emit are required functions');
   if (!project?.repository || !project?.seriesKey || !project?.githubPages?.publicUrl) throw new Error('project configuration is required');
+  if (!Number.isInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > 3) throw new Error('maxAttempts must be from 1 to 3');
+  if (!Number.isInteger(retryDelayMs) || retryDelayMs < 0 || retryDelayMs > 300_000 || typeof sleep !== 'function') throw new Error('invalid retry delay');
 
   let payload;
   try {
@@ -128,10 +155,16 @@ export async function runUnattendedPublisher({ day, prepare, publish, emit, proj
 
   const expectedFingerprint = fingerprint(payload);
   let outcome;
-  try {
-    outcome = await publish({ payload, fingerprint: expectedFingerprint, runId });
-  } catch {
-    outcome = { status: 'failed', fingerprint: expectedFingerprint, result: abnormalResult('driver_failed') };
+  let attemptCount = 0;
+  while (attemptCount < maxAttempts) {
+    attemptCount += 1;
+    try {
+      outcome = await publish({ payload, fingerprint: expectedFingerprint, runId });
+    } catch {
+      outcome = { status: 'failed', fingerprint: expectedFingerprint, result: abnormalResult('driver_failed') };
+    }
+    if (!retryablePreClickOutcome(outcome, expectedFingerprint) || attemptCount === maxAttempts) break;
+    await sleep(retryDelayMs);
   }
 
   if (!ALLOWED_STATUSES.has(outcome?.status) || !outcome?.result) {
@@ -153,6 +186,12 @@ export async function runUnattendedPublisher({ day, prepare, publish, emit, proj
   if (outcome.status !== 'verified' && typeof outcome.result.phase !== 'string') {
     outcome.result = { ...outcome.result, phase: phaseFor(outcome.result.reasonCode) };
   }
+  outcome.result = {
+    ...outcome.result,
+    attemptCount,
+    ...(maxAttempts > 1 && attemptCount === maxAttempts && retryablePreClickOutcome(outcome, expectedFingerprint)
+      ? { retryLimitReached: true } : {}),
+  };
 
   const silent = outcome.status === 'verified';
   return complete(

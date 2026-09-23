@@ -80,6 +80,10 @@ Publish statuses are `verified`, `blocked`, `failed`, `uncertain`, or `cancelled
 
 Every non-`verified` publish event requires `result.phase`, identifying the failed step without including page content. Supported phases are `payload_preflight`, `bootstrap_preflight`, `browser_connection`, `browser_session`, `draft_audit`, `public_audit`, `publish_interlock`, `publish_click`, `public_verification`, `result_validation`, and `unknown`.
 
+When `reasonCode` is `anti_automation`, `result.blockReason` records the detected category (`cloudflare`, `captcha`, or `rate_limited`) without storing page text or browser state.
+
+The scheduled runner records `result.attemptCount` (1–3). `result.retryLimitReached: true` means a retryable pre-click failure remained after the third attempt. Intermediate attempts do not create events.
+
 A `verified` publish event must additionally carry the minimum public identity needed by the read-only Hermes watchdog:
 
 ```json

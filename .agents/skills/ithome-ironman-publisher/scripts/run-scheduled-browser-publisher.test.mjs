@@ -29,7 +29,7 @@ describe('scheduled browser publisher', () => {
     });
 
     expect(runPublisher).toHaveBeenCalledOnce();
-    expect(runPublisher).toHaveBeenCalledWith({ day: 2 });
+    expect(runPublisher).toHaveBeenCalledWith({ day: 2, maxAttempts: 3, retryDelayMs: 300_000 });
     expect(result).toMatchObject({ status: 'verified', date: '2026-09-10', day: 2 });
   });
 

@@ -19,6 +19,80 @@ const payload = {
 };
 
 describe('unattended local publisher runner', () => {
+  test('retries a pre-click anti-automation block and emits only the final result', async () => {
+    const events = [];
+    const sleep = vi.fn(async () => {});
+    const publish = vi.fn()
+      .mockImplementationOnce(async ({ fingerprint }) => ({
+        status: 'blocked', fingerprint,
+        result: { reasonCode: 'anti_automation', blockReason: 'cloudflare', publishClickCount: 0, publicVerification: 'not_started' },
+      }))
+      .mockImplementationOnce(async ({ fingerprint }) => ({
+        status: 'verified', fingerprint,
+        result: { reasonCode: 'published', publishClickCount: 1, publicVerification: 'verified',
+          articleUrl: 'https://ithelp.ithome.com.tw/articles/123456', title: payload.title, canonicalUrl: payload.canonicalUrl },
+      }));
+
+    const result = await runUnattendedPublisher({
+      day: 12, project, prepare: async () => payload, publish,
+      emit: async (event) => events.push(event), maxAttempts: 3, retryDelayMs: 300_000, sleep,
+    });
+
+    expect(publish).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledOnce();
+    expect(sleep).toHaveBeenCalledWith(300_000);
+    expect(events).toHaveLength(1);
+    expect(result).toMatchObject({ status: 'verified', result: { attemptCount: 2 } });
+  });
+
+  test('notifies only after the bounded pre-click retry limit is exhausted', async () => {
+    const events = [];
+    const publish = vi.fn(async ({ fingerprint }) => ({
+      status: 'blocked', fingerprint,
+      result: { reasonCode: 'anti_automation', blockReason: 'cloudflare', publishClickCount: 0, publicVerification: 'not_started' },
+    }));
+
+    const result = await runUnattendedPublisher({
+      day: 12, project, prepare: async () => payload, publish,
+      emit: async (event) => events.push(event), maxAttempts: 3, retryDelayMs: 0, sleep: async () => {},
+    });
+
+    expect(publish).toHaveBeenCalledTimes(3);
+    expect(events).toHaveLength(1);
+    expect(result).toMatchObject({ status: 'blocked', result: { reasonCode: 'anti_automation', attemptCount: 3, retryLimitReached: true } });
+  });
+
+  test.each(['cloudflare', 'captcha', 'rate_limited'])('retries a %s block detected after the initial session check', async (reasonCode) => {
+    const publish = vi.fn(async ({ fingerprint }) => ({
+      status: 'failed', fingerprint,
+      result: { reasonCode, publishClickCount: 0, publicVerification: 'not_started' },
+    }));
+    const events = [];
+
+    await runUnattendedPublisher({
+      day: 12, project, prepare: async () => payload, publish,
+      emit: async (event) => events.push(event), maxAttempts: 3, retryDelayMs: 0, sleep: async () => {},
+    });
+
+    expect(publish).toHaveBeenCalledTimes(3);
+    expect(events).toHaveLength(1);
+    expect(events[0].result).toMatchObject({ reasonCode, attemptCount: 3, retryLimitReached: true });
+  });
+
+  test('never retries after a publish click or on a non-retryable draft error', async () => {
+    for (const result of [
+      { status: 'uncertain', result: { reasonCode: 'post_publish_unverified', publishClickCount: 1, publicVerification: 'uncertain' } },
+      { status: 'blocked', result: { reasonCode: 'draft_missing', publishClickCount: 0, publicVerification: 'not_started' } },
+    ]) {
+      const publish = vi.fn(async ({ fingerprint }) => ({ ...result, fingerprint }));
+      await runUnattendedPublisher({
+        day: 12, project, prepare: async () => payload, publish,
+        emit: async () => {}, maxAttempts: 3, retryDelayMs: 0, sleep: async () => {},
+      });
+      expect(publish).toHaveBeenCalledOnce();
+    }
+  });
+
   test('keeps a verified publish silent while recording a verified event', async () => {
     const events = [];
     const result = await runUnattendedPublisher({

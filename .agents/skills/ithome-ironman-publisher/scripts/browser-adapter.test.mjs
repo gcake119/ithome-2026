@@ -84,8 +84,19 @@ describe('iThome browser adapter', () => {
 
     const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'cloudflare' });
 
-    expect(outcome).toMatchObject({ status: 'blocked', result: { reasonCode: 'anti_automation', publishClickCount: 0 } });
+    expect(outcome).toMatchObject({ status: 'blocked', result: { reasonCode: 'anti_automation', blockReason: 'cloudflare', publishClickCount: 0 } });
     expect(browserDriver.scanDrafts).not.toHaveBeenCalled();
+    expect(browserDriver.publishOnce).not.toHaveBeenCalled();
+  });
+
+  test('does not copy unexpected browser text into an event', async () => {
+    const browserDriver = driver({
+      inspectSession: vi.fn(async () => ({ authenticated: false, antiAutomation: 'untrusted page text' })),
+    });
+
+    const result = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'unknown-block' });
+
+    expect(result).toMatchObject({ status: 'blocked', result: { reasonCode: 'anti_automation', blockReason: 'unknown' } });
     expect(browserDriver.publishOnce).not.toHaveBeenCalled();
   });
 
@@ -133,7 +144,7 @@ describe('iThome browser adapter', () => {
     const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'uncertain' });
 
     expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
-    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(6);
+    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(3);
     expect(outcome).toMatchObject({
       status: 'uncertain',
       result: { reasonCode: 'post_publish_unverified', publishClickCount: 1, publicVerification: 'uncertain' },
@@ -175,7 +186,7 @@ describe('iThome browser adapter', () => {
     const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'draft-remains' });
 
     expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
-    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(6);
+    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(3);
     expect(outcome).toMatchObject({
       status: 'uncertain',
       result: { reasonCode: 'post_publish_unverified', publishClickCount: 1, publicVerification: 'uncertain' },
@@ -219,7 +230,7 @@ describe('iThome browser adapter', () => {
     });
   });
 
-  test('records one possible click when the browser loses acknowledgement after dispatch', async () => {
+  test('verifies the public article without another click when acknowledgement is lost', async () => {
     const browserDriver = driver({
       publishOnce: vi.fn(async ({ markClickDispatched }) => {
         await markClickDispatched();
@@ -230,6 +241,26 @@ describe('iThome browser adapter', () => {
     const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'lost-ack' });
 
     expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
+    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(1);
+    expect(outcome).toMatchObject({
+      status: 'verified',
+      result: { reasonCode: 'published', publishClickCount: 1, publicVerification: 'verified' },
+    });
+  });
+
+  test('keeps the outcome uncertain if acknowledgement and public checks both fail', async () => {
+    const browserDriver = driver({
+      publishOnce: vi.fn(async ({ markClickDispatched }) => {
+        await markClickDispatched();
+        throw new Error('target closed after click dispatch');
+      }),
+      verifyPublic: vi.fn(async () => { throw new Error('navigation timeout'); }),
+    });
+
+    const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'lost-ack-unverified' });
+
+    expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
+    expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(3);
     expect(outcome).toMatchObject({
       status: 'uncertain',
       result: { reasonCode: 'post_publish_unverified', publishClickCount: 1, publicVerification: 'uncertain' },

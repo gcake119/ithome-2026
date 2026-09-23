@@ -49,6 +49,15 @@ describe('Hermes watcher Telegram formatter', () => {
     }])).toBe('iThome Day 06 發布失敗階段：登入與反自動化檢查；結果：blocked／anti_automation，請人工確認。');
   });
 
+  test('does not call an unverified post-click outcome a publication failure', () => {
+    expect(formatNotifications([{
+      kind: 'publish_failed',
+      day: 15,
+      status: 'uncertain',
+      result: { reasonCode: 'post_publish_unverified', phase: 'public_verification' },
+    }])).toBe('iThome Day 15 發布狀態待確認：發文後公開驗證未完成；請檢查公開文章，勿再次點擊發文。');
+  });
+
   test('formats GitHub Pages missing, mismatch, and unavailable results', () => {
     expect(formatNotifications([{ kind: 'github_pages_missing', day: 2, date: '2026-09-10' }]))
       .toBe('GitHub Pages 發布異常：Day 02（2026-09-10）頁面仍是 404。');

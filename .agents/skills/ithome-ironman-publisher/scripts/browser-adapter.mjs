@@ -31,8 +31,8 @@ export function createIthomeBrowserAdapter({
   expectedContestTag,
   loadBootstrap,
   recordClickDispatched,
-  verificationAttempts = 6,
-  verificationDelayMs = 5_000,
+  verificationAttempts = 3,
+  verificationDelayMs = 300_000,
 }) {
   if (!driver || typeof loadBootstrap !== 'function' || typeof recordClickDispatched !== 'function') {
     throw new Error('driver, loadBootstrap, and recordClickDispatched are required');
@@ -57,7 +57,12 @@ export function createIthomeBrowserAdapter({
 
       const session = await driver.inspectSession();
       const sessionFailure = exactSession(session, { expectedAccount, expectedSeriesTitle, expectedContestTag });
-      if (sessionFailure) return outcome('blocked', fingerprint, sessionFailure);
+      if (sessionFailure) {
+        const blockReason = ['cloudflare', 'captcha', 'rate_limited'].includes(session.antiAutomation)
+          ? session.antiAutomation : 'unknown';
+        return outcome('blocked', fingerprint, sessionFailure,
+          sessionFailure === 'anti_automation' ? { blockReason } : {});
+      }
 
       const drafts = await driver.scanDrafts({ payload, bootstrap });
       if (!Array.isArray(drafts)) return outcome('failed', fingerprint, 'draft_scan_incomplete');
@@ -71,27 +76,31 @@ export function createIthomeBrowserAdapter({
       const draft = await driver.inspectDraft({ draft: drafts[0], payload, bootstrap });
       if (!exactDraft(draft, payload, { expectedSeriesTitle, expectedContestTag })) return outcome('blocked', fingerprint, 'draft_mismatch');
 
-      const publishResult = await driver.publishOnce({
-        draft: drafts[0],
-        payload,
-        bootstrap,
-        markClickDispatched: async () => {
-          await recordClickDispatched({ day: payload.day, fingerprint, runId });
-          publishClickCount = 1;
-        },
-      });
-      if (!publishResult?.clicked && publishClickCount === 1) {
-        return outcome('uncertain', fingerprint, 'post_publish_unverified', { publishClickCount, publicVerification: 'uncertain' });
+      let publishResult;
+      try {
+        publishResult = await driver.publishOnce({
+          draft: drafts[0],
+          payload,
+          bootstrap,
+          markClickDispatched: async () => {
+            await recordClickDispatched({ day: payload.day, fingerprint, runId });
+            publishClickCount = 1;
+          },
+        });
+      } catch (error) {
+        if (publishClickCount !== 1 || TERMINAL_VERIFICATION_REASONS.has(error?.reasonCode)) throw error;
+        // Dispatch may have succeeded even when the browser lost its acknowledgement.
+        // Continue with read-only checks; the click receipt still forbids another click.
       }
-      if (!publishResult?.clicked) return outcome('failed', fingerprint, 'publish_not_clicked');
+      if (!publishResult?.clicked && publishClickCount === 0) return outcome('failed', fingerprint, 'publish_not_clicked');
       if (publishClickCount !== 1) return outcome('uncertain', fingerprint, 'publish_click_untracked', {
         publishClickCount: 1,
         publicVerification: 'uncertain',
       });
 
-      const postClickReason = publishResult.postClickState === 'confirmation_required'
+      const postClickReason = publishResult?.postClickState === 'confirmation_required'
         ? 'publish_confirmation_required'
-        : publishResult.postClickState === 'server_error'
+        : publishResult?.postClickState === 'server_error'
           ? 'publish_server_error'
           : 'post_publish_unverified';
 

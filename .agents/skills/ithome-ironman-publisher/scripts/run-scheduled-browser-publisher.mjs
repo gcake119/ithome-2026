@@ -27,7 +27,7 @@ export async function runScheduledBrowserPublisher({
   const date = taipeiDateFormatter.format(now);
   const day = scheduledDayForDate(project.schedule, date);
   if (!day) return { status: 'not_scheduled', date, day: null, exitCode: 0 };
-  return { date, day, ...(await runPublisher({ day })) };
+  return { date, day, ...(await runPublisher({ day, maxAttempts: 3, retryDelayMs: 300_000 })) };
 }
 
 async function main() {
@@ -38,6 +38,8 @@ async function main() {
     day: result.day,
     silent: result.silent ?? true,
     reasonCode: result.result?.reasonCode ?? null,
+    attemptCount: result.result?.attemptCount ?? null,
+    retryLimitReached: result.result?.retryLimitReached === true,
   })}\n`);
   process.exit(result.exitCode);
 }

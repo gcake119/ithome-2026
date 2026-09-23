@@ -76,7 +76,7 @@ Day 1 發布後，還要從公開文章驗證系列連結，才能建立 verifie
 - payload 只能由 `pnpm ithome:prepare -- --day N --json` 新鮮產生。
 - 不刪草稿、不覆寫衝突草稿、不修改已公開文章。
 - 發布前核對帳號、系列、contest tag、唯一草稿、標題、同步連結與正文。
-- Cloudflare、CAPTCHA、429、登入失效、重複草稿、頁面改版或結果不明時立即停止。
-- publish click 後若結果不明，不可自動重試。
+- 獨立排程遇到 Cloudflare、CAPTCHA、429、登入失效或暫時性連線問題時，只在尚未點擊發文的前提下最多嘗試三次，每次相隔 5 分鐘；最後仍失敗才留下通知事件。
+- 重複草稿、頁面改版或資料不符時立即停止。發文點擊後不可再次點擊；公開文章與草稿狀態可唯讀查證最多三次，每次相隔 5 分鐘。
 
 完整契約請閱讀 `.agents/skills/ithome-ironman-publisher/SKILL.md` 與其 `references/`。需要異常通知時，再看 [Hermes 指南](hermes.md)。

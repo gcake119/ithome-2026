@@ -38,6 +38,8 @@ function formatOne(item) {
   if (item.kind === 'audit_duplicate') return `iThome 草稿盤點異常：${item.entries.map((entry) => `${day(entry.day)} 有 ${entry.count} 份重複草稿`).join('；')}，未自動刪除。`;
   if (item.kind === 'audit_mismatch') return `iThome 草稿盤點異常：${item.entries.map((entry) => `${day(entry.day)} 的 ${entry.fields.join('、')} 不一致`).join('；')}，未自動覆寫。`;
   if (item.kind === 'audit_failed') return `iThome 草稿盤點失敗：${item.failure?.reasonCode ?? 'unknown'}，請查看 Codex audit log。`;
+  if (item.kind === 'publish_failed' && item.status === 'uncertain' && item.result?.reasonCode === 'post_publish_unverified') return `iThome ${day(item.day)} 發布狀態待確認：發文後公開驗證未完成；請檢查公開文章，勿再次點擊發文。`;
+  if (item.kind === 'publish_failed' && item.status === 'uncertain') return `iThome ${day(item.day)} 發布狀態待確認：${phaseLabel(item.result?.phase)}；原因：${item.result?.reasonCode ?? 'unknown'}，請人工確認，勿再次點擊發文。`;
   if (item.kind === 'publish_failed') return `iThome ${day(item.day)} 發布失敗階段：${phaseLabel(item.result?.phase)}；結果：${item.status}／${item.result?.reasonCode ?? 'unknown'}，請人工確認。`;
   if (item.kind === 'bootstrap_failed') return `iThome Day 1 bootstrap 異常：${item.status}／${item.failure?.reasonCode ?? 'unknown'}，請人工確認。`;
   if (item.kind === 'bootstrap_missing') return `iThome Day 1 ${item.checkpoint === 'day1-2230' ? '22:30' : '19:00'} 尚無有效 verified bootstrap state，請人工確認。`;

@@ -110,7 +110,7 @@ async function createEventEmitter(config) {
   };
 }
 
-export async function runBrowserPublisher({ day, env = process.env }) {
+export async function runBrowserPublisher({ day, env = process.env, maxAttempts = 1, retryDelayMs = 300_000 }) {
   const config = loadRunnerConfig(env);
   await assertEventSinkWritable(config.eventDir);
   const project = await loadProjectConfig({ requireInitialized: true });
@@ -138,6 +138,8 @@ export async function runBrowserPublisher({ day, env = process.env }) {
     publish,
     emit: await createEventEmitter(config),
     project,
+    maxAttempts,
+    retryDelayMs,
   });
 }
 
