@@ -193,6 +193,50 @@ describe('iThome browser adapter', () => {
     });
   });
 
+  test('records which read-only public check failed without page content or another click', async () => {
+    const browserDriver = driver({
+      verifyPublic: vi.fn(async () => ({
+        verified: false,
+        articleFound: true,
+        titleMatched: true,
+        canonicalLinkMatched: false,
+        draftPresent: false,
+        articleUrl: 'https://ithelp.ithome.com.tw/articles/123456',
+        body: 'private article body must not reach the event',
+      })),
+    });
+
+    const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'canonical-missing' });
+
+    expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
+    expect(outcome.result.verificationTrace).toEqual([1, 2, 3].map((attempt) => ({
+      attempt,
+      articleFound: true,
+      titleMatched: true,
+      canonicalLinkMatched: false,
+      draftPresent: false,
+    })));
+    expect(JSON.stringify(outcome)).not.toContain('private article body');
+    expect(JSON.stringify(outcome)).not.toContain('/articles/123456');
+  });
+
+  test('records only a safe category and stage when read-only verification throws', async () => {
+    const browserDriver = driver({
+      verifyPublic: vi.fn(async () => {
+        throw Object.assign(new Error('private page text'), { verificationStage: 'draft_lookup' });
+      }),
+    });
+
+    const outcome = await adapter(browserDriver)({ payload, fingerprint: 'sha256:fresh', runId: 'draft-read-failed' });
+
+    expect(outcome.result.verificationTrace).toEqual([1, 2, 3].map((attempt) => ({
+      attempt,
+      errorCode: 'read_failed',
+      stage: 'draft_lookup',
+    })));
+    expect(JSON.stringify(outcome)).not.toContain('private page text');
+  });
+
   test.each([
     ['confirmation_required', 'publish_confirmation_required'],
     ['server_error', 'publish_server_error'],
@@ -210,7 +254,7 @@ describe('iThome browser adapter', () => {
     expect(browserDriver.publishOnce).toHaveBeenCalledTimes(1);
     expect(outcome).toMatchObject({
       status: 'uncertain',
-      result: { reasonCode, publishClickCount: 1, publicVerification: 'uncertain' },
+      result: { reasonCode, postClickState, publishClickCount: 1, publicVerification: 'uncertain' },
     });
   });
 
@@ -263,7 +307,7 @@ describe('iThome browser adapter', () => {
     expect(browserDriver.verifyPublic).toHaveBeenCalledTimes(3);
     expect(outcome).toMatchObject({
       status: 'uncertain',
-      result: { reasonCode: 'post_publish_unverified', publishClickCount: 1, publicVerification: 'uncertain' },
+      result: { reasonCode: 'post_publish_unverified', postClickState: 'unknown', publishClickCount: 1, publicVerification: 'uncertain' },
     });
   });
 

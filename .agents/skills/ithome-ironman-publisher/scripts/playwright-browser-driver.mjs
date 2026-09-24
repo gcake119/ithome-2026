@@ -239,32 +239,46 @@ export function createPlaywrightIthomeDriver({ chromiumImpl = chromium, config }
     async verifyPublic({ payload, bootstrap }) {
       const activePage = requirePage();
       try { await activePage.waitForLoadState('domcontentloaded', { timeout: 15_000 }); } catch {}
-      let articleUrl = null;
-      const current = activePage.url();
-      if (!/^https:\/\/ithelp\.ithome\.com\.tw\/articles\/[^/]+\/?$/.test(current) || /\/draft\/?$/.test(current)) {
-        const entries = await this.scanPublic({ payload, bootstrap });
-        if (entries.length === 1) {
-          articleUrl = entries[0].url;
-          await navigate(activePage, articleUrl);
+      let stage = 'public_lookup';
+      try {
+        let articleUrl = null;
+        const current = activePage.url();
+        if (!/^https:\/\/ithelp\.ithome\.com\.tw\/articles\/[^/]+\/?$/.test(current) || /\/draft\/?$/.test(current)) {
+          const entries = await this.scanPublic({ payload, bootstrap });
+          if (entries.length === 1) {
+            articleUrl = entries[0].url;
+            stage = 'article_read';
+            await navigate(activePage, articleUrl);
+          }
+        } else {
+          articleUrl = current;
         }
-      } else {
-        articleUrl = current;
+        let titleMatched = false;
+        let canonicalLinkMatched = false;
+        if (articleUrl) {
+          stage = 'article_read';
+          const text = await bodyText(activePage);
+          const antiAutomation = blockedBy(text);
+          if (antiAutomation) throw reasonError(antiAutomation);
+          titleMatched = (await activePage.getByText(payload.title, { exact: true }).count()) > 0;
+          canonicalLinkMatched = (await activePage.locator(`a[href="${payload.canonicalUrl}"]`).count()) > 0;
+        }
+        stage = 'draft_lookup';
+        const drafts = await this.scanDrafts({ payload, bootstrap });
+        return {
+          verified: Boolean(articleUrl) && titleMatched && canonicalLinkMatched,
+          articleFound: Boolean(articleUrl),
+          titleMatched,
+          canonicalLinkMatched,
+          draftPresent: drafts.length > 0,
+          ...(articleUrl ? { articleUrl } : {}),
+        };
+      } catch (error) {
+        if (error && typeof error === 'object') {
+          throw Object.assign(error, { verificationStage: stage });
+        }
+        throw Object.assign(new Error('Public verification read failed'), { verificationStage: stage });
       }
-      let publicVerified = false;
-      if (articleUrl) {
-        const text = await bodyText(activePage);
-        const antiAutomation = blockedBy(text);
-        if (antiAutomation) throw reasonError(antiAutomation);
-        const titleCount = await activePage.getByText(payload.title, { exact: true }).count();
-        const canonicalCount = await activePage.locator(`a[href="${payload.canonicalUrl}"]`).count();
-        publicVerified = titleCount > 0 && canonicalCount > 0;
-      }
-      const drafts = await this.scanDrafts({ payload, bootstrap });
-      return {
-        verified: publicVerified,
-        draftPresent: drafts.length > 0,
-        ...(articleUrl ? { articleUrl } : {}),
-      };
     },
   };
 }

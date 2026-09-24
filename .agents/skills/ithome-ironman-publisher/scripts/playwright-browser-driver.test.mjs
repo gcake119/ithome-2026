@@ -166,4 +166,40 @@ describe('Playwright iThome browser driver', () => {
     expect(page.evaluate).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ clicked: true, postClickState: 'confirmation_required' });
   });
+
+  test('reports the exact public checks separately without returning article content', async () => {
+    const page = fakePage('article body must stay local');
+    page.url = vi.fn(() => 'https://ithelp.ithome.com.tw/articles/123456');
+    page.locator = vi.fn(() => ({ count: vi.fn(async () => 0) }));
+    const driver = createPlaywrightIthomeDriver({ chromiumImpl: fakeChromium(page), config });
+    await driver.connect();
+    driver.scanDrafts = vi.fn(async () => []);
+
+    const result = await driver.verifyPublic({
+      payload: { title: 'Day 12 test', canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/12/' },
+    });
+
+    expect(result).toEqual({
+      verified: false,
+      articleFound: true,
+      titleMatched: true,
+      canonicalLinkMatched: false,
+      draftPresent: false,
+      articleUrl: 'https://ithelp.ithome.com.tw/articles/123456',
+    });
+    expect(JSON.stringify(result)).not.toContain('article body must stay local');
+  });
+
+  test('labels a failed draft scan without exposing its page text', async () => {
+    const page = fakePage('private article body');
+    page.url = vi.fn(() => 'https://ithelp.ithome.com.tw/articles/123456');
+    page.locator = vi.fn(() => ({ count: vi.fn(async () => 1) }));
+    const driver = createPlaywrightIthomeDriver({ chromiumImpl: fakeChromium(page), config });
+    await driver.connect();
+    driver.scanDrafts = vi.fn(async () => { throw new Error('private draft page text'); });
+
+    await expect(driver.verifyPublic({
+      payload: { title: 'Day 12 test', canonicalUrl: 'https://gcake119.github.io/ithome-2026/day/12/' },
+    })).rejects.toMatchObject({ verificationStage: 'draft_lookup' });
+  });
 });

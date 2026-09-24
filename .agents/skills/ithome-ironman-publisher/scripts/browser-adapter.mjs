@@ -1,5 +1,25 @@
 const DEFAULT_RESULT = Object.freeze({ publishClickCount: 0, publicVerification: 'not_started' });
 const TERMINAL_VERIFICATION_REASONS = new Set(['cloudflare', 'captcha', 'rate_limited']);
+const VERIFICATION_STAGES = new Set(['public_lookup', 'article_read', 'draft_lookup']);
+
+function verificationCheck(attempt, verification) {
+  const flag = (value) => typeof value === 'boolean' ? value : null;
+  return {
+    attempt,
+    articleFound: flag(verification?.articleFound),
+    titleMatched: flag(verification?.titleMatched),
+    canonicalLinkMatched: flag(verification?.canonicalLinkMatched),
+    draftPresent: flag(verification?.draftPresent),
+  };
+}
+
+function verificationError(attempt, error) {
+  return {
+    attempt,
+    errorCode: TERMINAL_VERIFICATION_REASONS.has(error?.reasonCode) ? error.reasonCode : 'read_failed',
+    stage: VERIFICATION_STAGES.has(error?.verificationStage) ? error.verificationStage : 'unknown',
+  };
+}
 
 function outcome(status, fingerprint, reasonCode, overrides = {}) {
   return {
@@ -103,10 +123,14 @@ export function createIthomeBrowserAdapter({
         : publishResult?.postClickState === 'server_error'
           ? 'publish_server_error'
           : 'post_publish_unverified';
+      const postClickState = ['accepted', 'confirmation_required', 'server_error', 'pending']
+        .includes(publishResult?.postClickState) ? publishResult.postClickState : 'unknown';
 
+      const verificationTrace = [];
       for (let attempt = 1; attempt <= verificationAttempts; attempt += 1) {
         try {
           const verification = await driver.verifyPublic({ payload, bootstrap });
+          verificationTrace.push(verificationCheck(attempt, verification));
           if (verification?.verified && verification?.draftPresent === false) {
             return outcome('verified', fingerprint, 'published', {
               publishClickCount,
@@ -117,13 +141,19 @@ export function createIthomeBrowserAdapter({
             });
           }
         } catch (error) {
+          verificationTrace.push(verificationError(attempt, error));
           if (TERMINAL_VERIFICATION_REASONS.has(error?.reasonCode)) break;
         }
         if (attempt < verificationAttempts) {
           await new Promise((resolve) => setTimeout(resolve, verificationDelayMs));
         }
       }
-      return outcome('uncertain', fingerprint, postClickReason, { publishClickCount, publicVerification: 'uncertain' });
+      return outcome('uncertain', fingerprint, postClickReason, {
+        publishClickCount,
+        publicVerification: 'uncertain',
+        postClickState,
+        verificationTrace,
+      });
     } catch (error) {
       const reasonCode = error?.reasonCode || (publishClickCount === 1 ? 'post_publish_unverified' : 'browser_driver_failed');
       const status = publishClickCount === 1 ? 'uncertain' : reasonCode === 'prior_publish_click_recorded' ? 'blocked' : 'failed';

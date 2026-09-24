@@ -84,6 +84,8 @@ When `reasonCode` is `anti_automation`, `result.blockReason` records the detecte
 
 The scheduled runner records `result.attemptCount` (1–3). `result.retryLimitReached: true` means a retryable pre-click failure remained after the third attempt. Intermediate attempts do not create events.
 
+After a publish click, an `uncertain` event may include `result.postClickState` (`accepted`, `confirmation_required`, `server_error`, `pending`, or `unknown`) and `result.verificationTrace` with at most three read-only checks. Each trace entry has an `attempt` number and either `articleFound`, `titleMatched`, `canonicalLinkMatched`, and `draftPresent` booleans (or `null` when the check was unavailable), or a sanitized `errorCode` (`cloudflare`, `captcha`, `rate_limited`, `read_failed`) and `stage` (`public_lookup`, `article_read`, `draft_lookup`, `unknown`). These fields identify which check blocked verification without recording page text, article body, HTML, cookies, or browser state. `result.attemptCount` remains the number of pre-click publishing attempts, not the length of `verificationTrace`.
+
 A `verified` publish event must additionally carry the minimum public identity needed by the read-only Hermes watchdog:
 
 ```json
