@@ -84,6 +84,7 @@ const lastRead = { day: post.data.day, title: shortTitle, href: `${base}${dayPat
       <h1>{shortTitle}</h1><p class="part-title">{post.data.description}</p><div class="prose"><slot /></div>
       {post.data.ithomeUrl && <p class="ithome-link"><a href={post.data.ithomeUrl}>在 iThome 閱讀同步版本 ↗</a></p>}
       <nav class="post-nav" aria-label="文章導覽"><div>{previous && <a href={`${base}${dayPath(previous.data.day).slice(1)}`}><small>← 上一篇</small><strong>{previous.data.title.replace(/^Day\s*\d+｜/, '')}</strong></a>}</div><div>{next && <a href={`${base}${dayPath(next.data.day).slice(1)}`}><small>下一篇 →</small><strong>{next.data.title.replace(/^Day\s*\d+｜/, '')}</strong></a>}</div></nav>
+      {post.data.day === publication.totalDays && project.extensions.enabled && project.extensions.mode === 'external' && <section class="extension-list"><p class="guide-kicker">{project.extensions.title}</p><h2>{project.extensions.externalSeries.title}</h2><p>{project.extensions.externalSeries.description}</p><a class="extension-card" href={project.extensions.externalSeries.url}><strong>繼續閱讀後續系列 →</strong></a></section>}
     </article></main>
   </div>
   <script is:inline define:vars={{ lastRead, storageKey: `${publication.seriesKey}:last-read` }}>try { localStorage.setItem(storageKey, JSON.stringify(lastRead)); } catch (_) {}</script>
