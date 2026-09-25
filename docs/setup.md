@@ -7,7 +7,7 @@
 - `ithome.config.json`：網站與發布工具實際讀取的正式公開設定，應提交到 Git。
 - `ithome.config.example.json`：供 fork 使用者參考的欄位範例，程式不會讀取或自動同步。
 - `src/content/ironman/day-01.md`～`day-30.md`：主系列唯一正式來源。
-- `src/content/extensions/*.md`：延伸閱讀，不占 Day 編號，也不進入 publisher。
+- `src/content/extensions/*.md`：選配的延伸閱讀，不占 Day 編號，也不進入 publisher。模板預設 `extensions.enabled: false`，因此即使目錄存在也不會顯示；確定要發表延伸內容時再改為 `true`。
 - Chrome profile、cookie、登入 session、token、Telegram credential 與 runtime state：只能放在 repo 外。
 
 Fork 會保留原 repo 的正式設定與文章，不會自動清空。複製範例設定會覆蓋原有設定，但不會重設文章。
