@@ -77,7 +77,7 @@ pnpm build
 ## 換成自己的文章
 
 - 主系列放在 `src/content/ironman/day-01.md`～`day-30.md`。
-- 延伸閱讀是選配功能，預設關閉且不渲染。要發表時先將 `ithome.config.json` 的 `extensions.enabled` 改為 `true`，文章放在 `src/content/extensions/`；不占 Day 編號，也不會進入 iThome publisher。
+- 延伸閱讀是選配功能，預設關閉且不渲染。啟用後可選 `local`：文章寫在 `src/content/extensions/`；或 `external`：首頁與 Day 30 只放一張卡片，連到外部部落格的後續系列。兩種模式都不占 Day 編號，也不會進入 iThome publisher。
 - 尚未準備公開的文章保持 `draft: true`。
 - Day、檔名、日期及 `ithome.config.json` 的日期表必須一致。
 - iThome 同步連結由 payload 自動加入，不要寫回 Markdown。
