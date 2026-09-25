@@ -53,7 +53,7 @@
     ]
   },
   "extensions": {
-    "enabled": true,
+    "enabled": false,
     "title": "延伸閱讀",
     "description": "在這裡介紹主系列以外的補充文章與延伸內容。"
   },
