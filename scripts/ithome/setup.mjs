@@ -19,7 +19,7 @@ export const DEFAULT_TEMPLATE = {
     { id: 'practice', title: '開始實作', description: '把觀念帶進可驗證的小型任務。', articleContext: '把觀念帶進可以觀察與驗證的實作。' },
     { id: 'reflection', title: '整理與延伸', description: '回顧做法，建立可以繼續使用的方法。', articleContext: '整理實作經驗，留下可以繼續使用的方法。' },
   ] },
-  extensions: { enabled: false, title: '延伸閱讀', description: '鐵人賽以外的心得、補充與後續實作。' },
+  extensions: { enabled: false, mode: 'local', title: '延伸閱讀', description: '鐵人賽以外的心得、補充與後續實作。', externalSeries: { title: '後續系列', description: '在其他網站繼續閱讀這個系列的後續內容。', url: 'https://example.com/' } },
   brand: { mark: { light: 'assets/ai-collaboration-mark.png', dark: 'assets/ai-collaboration-mark-dark.png', alt: 'iThome 鐵人賽系列標誌' }, favicon: 'favicon.png', appleTouchIcon: 'apple-touch-icon.png' },
   seo: { siteName: '三十天學習誌', authorName: '公開作者名稱', socialImage: 'assets/ai-collaboration-mark.png' },
 };
