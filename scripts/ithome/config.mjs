@@ -53,7 +53,15 @@ export function validateProjectConfig(config, { requireInitialized = false } = {
     }
   }
   if (typeof config?.extensions?.enabled !== 'boolean') errors.push('extensions.enabled');
+  if (!['local', 'external'].includes(config?.extensions?.mode)) errors.push('extensions.mode');
   for (const key of ['title', 'description']) if (!text(config?.extensions?.[key])) errors.push(`extensions.${key}`);
+  if (config?.extensions?.mode === 'external') {
+    for (const key of ['title', 'description', 'url']) if (!text(config?.extensions?.externalSeries?.[key])) errors.push(`extensions.externalSeries.${key}`);
+    try {
+      const url = new URL(config?.extensions?.externalSeries?.url);
+      if (!['http:', 'https:'].includes(url.protocol)) errors.push('extensions.externalSeries.url');
+    } catch { errors.push('extensions.externalSeries.url'); }
+  }
   if (!text(config?.brand?.mark?.alt)) errors.push('brand.mark.alt');
   for (const [key, value] of [
     ['brand.mark.light', config?.brand?.mark?.light], ['brand.mark.dark', config?.brand?.mark?.dark],
