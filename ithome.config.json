@@ -186,13 +186,13 @@
     ]
   },
   "extensions": {
-    "enabled": true,
+    "enabled": false,
     "title": "延伸閱讀",
     "description": "主系列以外的補充文章與延伸內容。",
     "mode": "external",
     "externalSeries": {
       "title": "後續系列",
-      "description": "延伸文章發布在其他網站時，可從這裡繼續閱讀。",
+      "description": "延伸文章將發布在技術部落格；系列網址確認後再開放入口。",
       "url": "https://example.com/"
     }
   },
