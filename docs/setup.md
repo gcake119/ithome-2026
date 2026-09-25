@@ -7,7 +7,7 @@
 - `ithome.config.json`：網站與發布工具實際讀取的正式公開設定，應提交到 Git。
 - `ithome.config.example.json`：供 fork 使用者參考的欄位範例，程式不會讀取或自動同步。
 - `src/content/ironman/day-01.md`～`day-30.md`：主系列唯一正式來源。
-- `src/content/extensions/*.md`：選配的延伸閱讀，不占 Day 編號，也不進入 publisher。模板預設 `extensions.enabled: false`，因此即使目錄存在也不會顯示；確定要發表延伸內容時再改為 `true`。
+- `src/content/extensions/*.md`：`extensions.mode: "local"` 時使用的選配延伸閱讀，不占 Day 編號，也不進入 publisher。模板預設 `extensions.enabled: false`，因此不會顯示。若延伸文章發布在其他網站，改用 `mode: "external"` 並設定 `externalSeries`；首頁與 Day 30 會連到該外部系列，不複製文章正文。
 - Chrome profile、cookie、登入 session、token、Telegram credential 與 runtime state：只能放在 repo 外。
 
 Fork 會保留原 repo 的正式設定與文章，不會自動清空。複製範例設定會覆蓋原有設定，但不會重設文章。
@@ -101,6 +101,11 @@ section: "foundation"
 - `description` 要描述單篇內容，不要重複貼上章節簡介。
 - 未準備公開時保持 `draft: true`。
 - iThome 同步連結由 payload 自動加入，不要寫回 Markdown。
+
+延伸閱讀有兩種模式：
+
+- `local`：延伸文章繼續寫在這個 repo，使用下方 Markdown 格式。
+- `external`：延伸文章發布在其他網站；設定 `externalSeries.title`、`description`、`url`，本站只在首頁與 Day 30 顯示後續系列入口。
 
 延伸閱讀範例：
 
