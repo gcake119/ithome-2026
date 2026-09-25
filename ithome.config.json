@@ -189,7 +189,7 @@
     "enabled": true,
     "title": "延伸閱讀",
     "description": "主系列以外的補充文章與延伸內容。",
-    "mode": "local",
+    "mode": "external",
     "externalSeries": {
       "title": "後續系列",
       "description": "延伸文章發布在其他網站時，可從這裡繼續閱讀。",
