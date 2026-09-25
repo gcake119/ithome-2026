@@ -81,3 +81,15 @@ node .agents/skills/ithome-ironman-publisher/scripts/hermes-github-pages-watchdo
 - The state keeps the latest public check and the latest verified check separately. A later 09:00 reminder or failed check must not erase the verified evidence needed to reconcile an earlier same-Day publisher anomaly.
 
 The script does not install schedules or send Telegram. Pipe its JSON result through `scripts/hermes-watcher-notify.mjs` and the existing Hermes `--no-agent` relay.
+
+## Screen-locked macOS verification
+
+Public verification does not require an unlocked desktop, an iThome login, Computer Use, Chrome, or CDP. The watchdog uses ordinary background HTTPS requests, prefers the verified series page, falls back to the official series RSS, and then reads the discovered public article. A locked screen therefore does not block the check. System sleep is different: macOS may defer a `LaunchAgent` until the machine wakes.
+
+Reusable examples are included for forks:
+
+- `examples/macos/run-public-watchdog.zsh`
+- `examples/macos/com.example.ithome-public-watchdog-1900.plist`
+- `examples/macos/com.example.ithome-public-watchdog-2230.plist`
+
+Copy them outside the repository, replace every `__...__` placeholder, keep `public-watchdog-state.json` outside the repository and shared event directory, then validate the rendered files with `zsh -n` and `plutil -lint`. `LaunchAgent` calendar times use the Mac's local time zone, so the host must be configured for `Asia/Taipei` when these exact examples are used. The wrapper prints nothing for a verified result; anomaly text goes to the configured log and may optionally be handed to an existing notification relay. The examples do not install themselves, create a Telegram poller, or grant filesystem permissions.

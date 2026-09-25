@@ -38,4 +38,30 @@ describe('macOS unattended publisher examples', () => {
     expect(script).toContain('run-scheduled-browser-publisher.mjs');
     expect(script).not.toMatch(/json\/version" >\/dev\/null \|\| exit 1/);
   });
+
+  test('provides a locked-screen-safe public watchdog wrapper without browser dependencies', async () => {
+    const script = await readFile(new URL('run-public-watchdog.zsh', exampleRoot), 'utf8');
+    expect(script).toContain('hermes-public-series-watchdog.mjs');
+    expect(script).toContain('hermes-watcher-notify.mjs');
+    expect(script).toContain('public-1900|public-2230');
+    expect(script).toContain('ITHOME_PUBLIC_WATCHDOG_STATE');
+    expect(script).not.toMatch(/Chrome|CDP|cookie|password|token/i);
+    expect(script).not.toMatch(/\/Users\/[A-Za-z0-9._-]+/);
+  });
+
+  test('provides separate 19:00 and 22:30 public watchdog schedules', async () => {
+    const first = await readFile(new URL('com.example.ithome-public-watchdog-1900.plist', exampleRoot), 'utf8');
+    const second = await readFile(new URL('com.example.ithome-public-watchdog-2230.plist', exampleRoot), 'utf8');
+    expect(first).toContain('<key>Hour</key><integer>19</integer>');
+    expect(first).toContain('<key>Minute</key><integer>0</integer>');
+    expect(first).toContain('<string>public-1900</string>');
+    expect(second).toContain('<key>Hour</key><integer>22</integer>');
+    expect(second).toContain('<key>Minute</key><integer>30</integer>');
+    expect(second).toContain('<string>public-2230</string>');
+    for (const plist of [first, second]) {
+      expect(plist).toContain('__RUN_PUBLIC_WATCHDOG_SCRIPT__');
+      expect(plist).toContain('__PUBLIC_WATCHDOG_STATE__');
+      expect(plist).not.toMatch(/\/Users\/[A-Za-z0-9._-]+/);
+    }
+  });
 });

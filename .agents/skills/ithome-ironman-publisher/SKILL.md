@@ -33,6 +33,7 @@ Read only what the selected mode needs:
 - When emitting machine-readable results, read [references/event-contract.md](references/event-contract.md).
 - When integrating the Hermes notification consumer, read [references/hermes-watcher.md](references/hermes-watcher.md). This does not authorize installing a schedule, restarting Hermes, or sending Telegram.
 - When evaluating unattended publishing, read [references/unattended-runner.md](references/unattended-runner.md). The Codex／Computer Use publish mode remains confirmation-gated.
+- When installing or auditing schedules across the local publisher, public watchdog, Hermes, Codex heartbeat, or Computer Use fallback, read [references/automation-topology.md](references/automation-topology.md).
 
 ## Common workflow
 

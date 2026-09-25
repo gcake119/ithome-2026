@@ -47,6 +47,10 @@ Read `references/local-configuration.md` before enabling event exchange or Day 1
 
 The skill emits machine-readable results only. A Hermes installation or another notification consumer is a separate component with separate credentials and permissions.
 
+The public-series watchdog itself does not require an unlocked desktop or browser session. Forks can install the reusable macOS background wrapper and the separate 19:00／22:30 `LaunchAgent` examples under `examples/macos/`; see `references/hermes-watcher.md`. Screen lock is supported because the verifier uses public HTTPS／RSS only, while system sleep may defer the job until wake.
+
+For the complete supported combinations across the local publisher, background watchdog, Hermes, Codex heartbeat, and Computer Use fallback, read `references/automation-topology.md`. A reusable heartbeat prompt is provided under `examples/codex/`; it is not installed automatically and retains the same post-click safety boundary.
+
 ## Validation
 
 From the repository root:
