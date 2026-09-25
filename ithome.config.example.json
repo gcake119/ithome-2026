@@ -54,8 +54,14 @@
   },
   "extensions": {
     "enabled": false,
+    "mode": "local",
     "title": "延伸閱讀",
-    "description": "在這裡介紹主系列以外的補充文章與延伸內容。"
+    "description": "主系列以外的補充文章與延伸內容。",
+    "externalSeries": {
+      "title": "後續系列",
+      "description": "如果延伸文章發布在其他網站，可在這裡介紹後續系列。",
+      "url": "https://example.com/"
+    }
   },
   "brand": {
     "mark": {
