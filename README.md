@@ -117,6 +117,7 @@ section: "foundation"
 2. [部署 GitHub Pages](docs/deployment.md)：啟用 Pages、確認 workflow 與實際公開網址。
 3. [設定 iThome publisher](docs/publisher.md)：選配的專用 Chrome、草稿、09:30 本機發布排程與安全規則。
 4. [設定 Hermes 提醒與監控](docs/hermes.md)：選配的 09:00 提醒、19:00／22:30 公開頁面檢查。
+5. [組合發布與監控自動化](docs/automation.md)：LaunchAgent、Hermes、Codex heartbeat、Computer Use 與背景 RSS 驗證的分工。
 
 只需要個人網站時，完成前兩項即可。
 

@@ -1,5 +1,7 @@
 # Hermes 提醒與監控
 
+若要比較 Hermes、Codex heartbeat、Computer Use、Playwright 與背景 watchdog 的完整組合，先看[發布與監控自動化](automation.md)。
+
 Hermes 是選配的唯讀提醒與公開頁面監控，不是自動發文工具。它不登入 iThome、不讀草稿正文，也不按發布；iThome 登入資料留在 publisher 的專用 Chrome，Telegram 連線資料留在 Hermes。
 
 ## 預期行為
@@ -11,6 +13,8 @@ Hermes 是選配的唯讀提醒與公開頁面監控，不是自動發文工具�
 - 22:30：再次檢查公開系列頁。
 
 晚間檢查會核對最後一篇文章的標題、日期、網址與個人連載網站連結。全部正確時保持安靜；內容不符才通知。公開頁暫時不可讀時最多重試 2 次，每次間隔 2 分鐘；仍失敗才通知人工檢查，不能誤報為尚未發布。非三十天比賽日期時保持安靜。
+
+這項公開驗證是背景 HTTPS／RSS 檢查，不依賴 Chrome、Computer Use 或登入 Cookie。macOS 只鎖定螢幕時仍可執行；如果整台 Mac 進入睡眠，排程可能延後到喚醒後才執行。
 
 ## 開始前準備
 
@@ -60,6 +64,24 @@ Hermes 只能讀 publisher event 與 bootstrap state；`watcher-state.json`、`p
 建立後先做不傳送真實通知的驗收，回報三個 job ID、時間與時區、執行帳號、repo 版本、私人狀態檔位置、下一次執行時間、驗收結果，以及 Telegram Gateway 與 --no-agent 狀態。
 ```
 
+## 不使用 Hermes 的 macOS 背景排程
+
+只需要鎖定螢幕時仍能執行公開驗證，不需要 Telegram 時，可以直接使用 repo 內的可審查範例：
+
+- `.agents/skills/ithome-ironman-publisher/examples/macos/run-public-watchdog.zsh`
+- `.agents/skills/ithome-ironman-publisher/examples/macos/com.example.ithome-public-watchdog-1900.plist`
+- `.agents/skills/ithome-ironman-publisher/examples/macos/com.example.ithome-public-watchdog-2230.plist`
+
+安裝前請先：
+
+1. 把 wrapper 與兩份 plist 複製到 repo 外。
+2. 替換所有 `__...__` placeholder；不要把個人絕對路徑寫回 Git。
+3. 將 `public-watchdog-state.json` 放在執行帳號自己的私有資料夾，不可放在 repo 或共享 event 資料夾。
+4. 執行 `zsh -n <wrapper>` 與 `plutil -lint <plist>`。
+5. 使用 `--dry-run` 的正式命令驗證正確文章安靜、內容不符與讀取失敗能分開回報，再另外明確授權安裝 LaunchAgent。
+
+兩份 plist 分別傳入 `public-1900` 與 `public-2230`，避免用執行時間猜 checkpoint。它們使用 Mac 本地時區；採用範例時間前，先確認主機時區是 `Asia/Taipei`。背景 wrapper 不登入 iThome、不操作草稿、不讀 Chrome profile，也不會傳 Telegram；異常文字只寫到設定的 log。若要推播，另接既有通知 relay，不要建立第二個 Telegram poller。
+
 ## 完成標準
 
 - 取得三個任務各自的 job ID。
@@ -68,5 +90,6 @@ Hermes 只能讀 publisher event 與 bootstrap state；`watcher-state.json`、`p
 - 測試能區分「內容不符」與「頁面讀取失敗」。
 - 正常結果不傳 Telegram。
 - Hermes 沒有取得 iThome cookie、Chrome profile 或登入資料。
+- 鎖定螢幕時公開驗證仍可執行；睡眠狀態則另行驗收喚醒後行為。
 
 這些排程不包含每日 09:30 發布；自動發布必須在 [publisher 環境](publisher.md) 另外安裝與驗收。

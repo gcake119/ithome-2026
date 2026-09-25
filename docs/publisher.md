@@ -1,5 +1,7 @@
 # iThome publisher 設定
 
+若要比較 publisher、背景公開驗證、Hermes、Codex heartbeat 與 Computer Use 的完整組合，先看[發布與監控自動化](automation.md)。
+
 publisher 是選配的本機發布流程。它讀取 repo payload，連接已登入 iThome 的專用 Chrome，核對唯一草稿後最多點擊一次發布。這與 GitHub Pages 部署是不同階段。
 
 ## 架構與分工
