@@ -41,7 +41,7 @@ An immutable `.publish-click-day-NN.receipt` always blocks another publish click
 - Treat `Asia/Taipei` as an explicit deployment requirement. `LaunchAgent` uses the Mac's local time zone; other schedulers must expose and verify their time zone.
 - Screen lock and system sleep are different. Background HTTPS checks work while locked; sleep may defer work until wake.
 - Only one component writes each state file. Publisher events are immutable; watcher state is private to the watcher account.
-- Normal verified results remain silent. Distinguish article mismatch from an exhausted public-page read failure.
+- The first verified public-series result for a Day is relayed once by Hermes with the article URL; later checkpoints for the same Day stay silent. Distinguish article mismatch from an exhausted public-page read failure.
 - A verified Day is a stopping condition for that Day. Resume only for the next scheduled Day.
 
 ## Repository examples

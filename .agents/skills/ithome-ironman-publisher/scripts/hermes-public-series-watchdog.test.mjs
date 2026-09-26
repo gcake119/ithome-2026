@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 
 import { describe, expect, test } from 'vitest';
 
-import { evaluatePublicSeries, fetchLatestSeriesPage, fetchWithRetry, publicationReminder, readScheduledMetadata } from './hermes-public-series-watchdog.mjs';
+import { decideDelivery, evaluatePublicSeries, fetchLatestSeriesPage, fetchWithRetry, publicationReminder, readScheduledMetadata } from './hermes-public-series-watchdog.mjs';
 
 const execFileAsync = promisify(execFile);
 const watchdogPath = fileURLToPath(new URL('./hermes-public-series-watchdog.mjs', import.meta.url));
@@ -39,6 +39,37 @@ const articleHtml = `
   </article>`;
 
 describe('Hermes public series watchdog', () => {
+  test('notifies once when a Day is verified across both public checkpoints', () => {
+    const first = decideDelivery({
+      result: { status: 'verified', notifications: [], articleUrl: expected.articleUrl },
+      state: {},
+      date: expected.date,
+      day: expected.day,
+      mode: 'check',
+      checkpoint: 'public-1900',
+      updatedAt: '2026-09-12T11:00:00.000Z',
+    });
+
+    expect(first.notifications).toEqual([{
+      kind: 'public_article_verified',
+      day: expected.day,
+      date: expected.date,
+      articleUrl: expected.articleUrl,
+    }]);
+
+    const second = decideDelivery({
+      result: { status: 'verified', notifications: [], articleUrl: expected.articleUrl },
+      state: first.nextState,
+      date: expected.date,
+      day: expected.day,
+      mode: 'check',
+      checkpoint: 'public-2230',
+      updatedAt: '2026-09-12T14:30:00.000Z',
+    });
+
+    expect(second.notifications).toEqual([]);
+  });
+
   test('runs from outside the repository while resolving repository assets', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'Hermes watchdog-cwd-'));
     const state = join(directory, 'public-watchdog-state.json');

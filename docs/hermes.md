@@ -12,7 +12,7 @@ Hermes 是選配的唯讀提醒與公開頁面監控，不是自動發文工具�
 - 19:00：第一次檢查公開系列頁。
 - 22:30：再次檢查公開系列頁。
 
-晚間檢查會核對最後一篇文章的標題、日期、網址與個人連載網站連結。全部正確時保持安靜；內容不符才通知。公開頁暫時不可讀時最多重試 2 次，每次間隔 2 分鐘；仍失敗才通知人工檢查，不能誤報為尚未發布。非三十天比賽日期時保持安靜。
+晚間檢查會核對最後一篇文章的標題、日期、網址與個人連載網站連結。當日第一次確認正確時，Hermes 會推送一次「Day N 已確認公開」與文章網址；同日另一個 checkpoint 不會重複推送。內容不符時另行通知。公開頁暫時不可讀時最多重試 2 次，每次間隔 2 分鐘；仍失敗才通知人工檢查，不能誤報為尚未發布。非三十天比賽日期時保持安靜。
 
 這項公開驗證是背景 HTTPS／RSS 檢查，不依賴 Chrome、Computer Use 或登入 Cookie。macOS 只鎖定螢幕時仍可執行；如果整台 Mac 進入睡眠，排程可能延後到喚醒後才執行。
 
@@ -78,7 +78,7 @@ Hermes 只能讀 publisher event 與 bootstrap state；`watcher-state.json`、`p
 2. 替換所有 `__...__` placeholder；不要把個人絕對路徑寫回 Git。
 3. 將 `public-watchdog-state.json` 放在執行帳號自己的私有資料夾，不可放在 repo 或共享 event 資料夾。
 4. 執行 `zsh -n <wrapper>` 與 `plutil -lint <plist>`。
-5. 使用 `--dry-run` 的正式命令驗證正確文章安靜、內容不符與讀取失敗能分開回報，再另外明確授權安裝 LaunchAgent。
+5. 使用 `--dry-run` 的正式命令驗證正確文章會產生一次確認通知、同日第二次確認保持安靜，而且內容不符與讀取失敗能分開回報，再另外明確授權安裝 LaunchAgent。
 
 兩份 plist 分別傳入 `public-1900` 與 `public-2230`，避免用執行時間猜 checkpoint。它們使用 Mac 本地時區；採用範例時間前，先確認主機時區是 `Asia/Taipei`。背景 wrapper 不登入 iThome、不操作草稿、不讀 Chrome profile，也不會傳 Telegram；異常文字只寫到設定的 log。若要推播，另接既有通知 relay，不要建立第二個 Telegram poller。
 
@@ -88,7 +88,7 @@ Hermes 只能讀 publisher event 與 bootstrap state；`watcher-state.json`、`p
 - 時區為 `Asia/Taipei`，時間為 09:00、19:00、22:30。
 - 兩個私人狀態檔不在 repo 或 publisher 共享資料夾。
 - 測試能區分「內容不符」與「頁面讀取失敗」。
-- 正常結果不傳 Telegram。
+- 當日第一次 verified 結果傳一次 Telegram，訊息包含文章網址；同日後續 checkpoint 不重複傳送。
 - Hermes 沒有取得 iThome cookie、Chrome profile 或登入資料。
 - 鎖定螢幕時公開驗證仍可執行；睡眠狀態則另行驗收喚醒後行為。
 

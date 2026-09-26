@@ -35,6 +35,15 @@ describe('Hermes watcher Telegram formatter', () => {
       .toBe('鐵人賽發文檢查失敗：目前無法可靠讀取系列頁，請人工確認。');
   });
 
+  test('formats a verified public article for one-time Telegram delivery', () => {
+    expect(formatNotifications([{
+      kind: 'public_article_verified',
+      day: 18,
+      date: '2026-09-26',
+      articleUrl: 'https://ithelp.ithome.com.tw/articles/10408740',
+    }])).toBe('iThome Day 18 已確認公開：https://ithelp.ithome.com.tw/articles/10408740');
+  });
+
   test('does not misreport missing verified publish evidence as a missing public article', () => {
     expect(formatNotifications([{ kind: 'public_publish_event_missing', day: 2, date: '2026-09-10' }]))
       .toBe('iThome 發布證據不足：尚未收到 Day 02（2026-09-10）的 verified 發布結果，無法判定公開文章是否正確，請人工確認。');

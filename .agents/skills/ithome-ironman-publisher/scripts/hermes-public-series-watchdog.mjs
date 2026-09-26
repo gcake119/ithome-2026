@@ -15,6 +15,35 @@ export function publicationReminder({ day, date }) {
   return { kind: 'publication_reminder', day, date };
 }
 
+export function decideDelivery({ result, state = {}, date, day, mode, checkpoint, updatedAt = new Date().toISOString() }) {
+  const verifiedNotification = mode === 'check' && result.status === 'verified'
+    ? [{ kind: 'public_article_verified', day, date, articleUrl: result.articleUrl }]
+    : null;
+  const pendingNotifications = verifiedNotification ?? result.notifications;
+  const key = verifiedNotification
+    ? `${date}:check:public_article_verified`
+    : `${date}:${mode}:${checkpoint ?? '0900'}:${pendingNotifications.map((item) => `${item.kind}:${(item.fields ?? []).join(',')}`).join('|') || 'verified'}`;
+  const delivered = new Set(Array.isArray(state.delivered) ? state.delivered : []);
+  const notifications = delivered.has(key) ? [] : pendingNotifications;
+  delivered.add(key);
+
+  let lastVerified = state.lastVerified;
+  if (!lastVerified && state.lastCheck?.status === 'verified') {
+    lastVerified = { ...state.lastCheck, verifiedAt: state.updatedAt };
+  }
+  if (mode === 'check' && result.status === 'verified') {
+    lastVerified = { date, day, status: 'verified', verifiedAt: updatedAt };
+  }
+  const nextState = {
+    schemaVersion: 1,
+    delivered: [...delivered].slice(-90),
+    lastCheck: { date, day, status: result.status },
+    ...(lastVerified ? { lastVerified } : {}),
+    updatedAt,
+  };
+  return { key, notifications, nextState };
+}
+
 function text(value) {
   return value
     .replace(/<[^>]*>/g, ' ')
@@ -305,25 +334,16 @@ async function main(argv) {
   }
 
   const state = readJson(resolve(options.state), { optional: true }) ?? {};
-  const key = `${date}:${options.mode}:${options.checkpoint ?? '0900'}:${result.notifications.map((item) => `${item.kind}:${(item.fields ?? []).join(',')}`).join('|') || 'verified'}`;
-  const delivered = new Set(Array.isArray(state.delivered) ? state.delivered : []);
-  const notifications = delivered.has(key) ? [] : result.notifications;
-  delivered.add(key);
   const updatedAt = new Date().toISOString();
-  let lastVerified = state.lastVerified;
-  if (!lastVerified && state.lastCheck?.status === 'verified') {
-    lastVerified = { ...state.lastCheck, verifiedAt: state.updatedAt };
-  }
-  if (options.mode === 'check' && result.status === 'verified') {
-    lastVerified = { date, day: scheduled.day, status: 'verified', verifiedAt: updatedAt };
-  }
-  const nextState = {
-    schemaVersion: 1,
-    delivered: [...delivered].slice(-90),
-    lastCheck: { date, day: scheduled.day, status: result.status },
-    ...(lastVerified ? { lastVerified } : {}),
+  const { notifications, nextState } = decideDelivery({
+    result,
+    state,
+    date,
+    day: scheduled.day,
+    mode: options.mode,
+    checkpoint: options.checkpoint,
     updatedAt,
-  };
+  });
   if (!options.dryRun) writeState(options.state, nextState);
   process.stdout.write(`${JSON.stringify({ ...result, notifications, date, day: scheduled.day, nextState, dryRun: options.dryRun }, null, 2)}\n`);
 }
