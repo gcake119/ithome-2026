@@ -43,7 +43,7 @@ describe('macOS unattended publisher examples', () => {
     const script = await readFile(new URL('run-public-watchdog.zsh', exampleRoot), 'utf8');
     expect(script).toContain('hermes-public-series-watchdog.mjs');
     expect(script).toContain('hermes-watcher-notify.mjs');
-    expect(script).toContain('public-1900|public-2230');
+    expect(script).toContain('public-live|public-1900|public-2230');
     expect(script).toContain('ITHOME_PUBLIC_WATCHDOG_STATE');
     expect(script).not.toMatch(/Chrome|CDP|cookie|password|token/i);
     expect(script).not.toMatch(/\/Users\/[A-Za-z0-9._-]+/);

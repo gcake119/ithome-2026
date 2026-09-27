@@ -10,8 +10,8 @@ set -o pipefail
 
 checkpoint="${1:-}"
 case "$checkpoint" in
-  public-1900|public-2230) ;;
-  *) print -u2 'checkpoint must be public-1900 or public-2230'; exit 1 ;;
+  public-live|public-1900|public-2230) ;;
+  *) print -u2 'checkpoint must be public-live, public-1900, or public-2230'; exit 1 ;;
 esac
 
 case "$ITHOME_WATCHDOG_REPO:$ITHOME_EVENT_DIR:$ITHOME_BOOTSTRAP_STATE:$ITHOME_PUBLIC_WATCHDOG_STATE" in

@@ -19,7 +19,7 @@ export function decideDelivery({ result, state = {}, date, day, mode, checkpoint
   const verifiedNotification = mode === 'check' && result.status === 'verified'
     ? [{ kind: 'public_article_verified', day, date, articleUrl: result.articleUrl }]
     : null;
-  const pendingNotifications = verifiedNotification ?? result.notifications;
+  const pendingNotifications = verifiedNotification ?? (checkpoint === 'public-live' ? [] : result.notifications);
   const key = verifiedNotification
     ? `${date}:check:public_article_verified`
     : `${date}:${mode}:${checkpoint ?? '0900'}:${pendingNotifications.map((item) => `${item.kind}:${(item.fields ?? []).join(',')}`).join('|') || 'verified'}`;
@@ -42,6 +42,12 @@ export function decideDelivery({ result, state = {}, date, day, mode, checkpoint
     updatedAt,
   };
   return { key, notifications, nextState };
+}
+
+export function isDayVerified(state, date, day) {
+  return state?.lastVerified?.status === 'verified'
+    && state.lastVerified.date === date
+    && state.lastVerified.day === day;
 }
 
 function text(value) {
@@ -242,8 +248,8 @@ function parseArgs(argv) {
     } else throw new Error(`Unknown argument: ${key}`);
   }
   if (!['reminder', 'check'].includes(options.mode)) throw new Error('--mode must be reminder or check');
-  if (!options.state || (options.mode === 'check' && (!options.events || !options.bootstrap || !['public-1900', 'public-2230'].includes(options.checkpoint)))) {
-    throw new Error('Usage: hermes-public-series-watchdog.mjs --mode reminder|check --state FILE [--events DIR --bootstrap FILE --checkpoint public-1900|public-2230] [--date YYYY-MM-DD] [--dry-run]');
+  if (!options.state || (options.mode === 'check' && (!options.events || !options.bootstrap || !['public-live', 'public-1900', 'public-2230'].includes(options.checkpoint)))) {
+    throw new Error('Usage: hermes-public-series-watchdog.mjs --mode reminder|check --state FILE [--events DIR --bootstrap FILE --checkpoint public-live|public-1900|public-2230] [--date YYYY-MM-DD] [--dry-run]');
   }
   return options;
 }
@@ -303,6 +309,12 @@ async function main(argv) {
     return;
   }
 
+  const state = readJson(resolve(options.state), { optional: true }) ?? {};
+  if (options.checkpoint === 'public-live' && isDayVerified(state, date, scheduled.day)) {
+    process.stdout.write(`${JSON.stringify({ status: 'already_verified', date, day: scheduled.day, notifications: [], nextState: state, dryRun: options.dryRun }, null, 2)}\n`);
+    return;
+  }
+
   let result;
   if (options.mode === 'reminder') {
     result = { status: 'reminder', notifications: [publicationReminder({ day: scheduled.day, date })] };
@@ -333,7 +345,6 @@ async function main(argv) {
     }
   }
 
-  const state = readJson(resolve(options.state), { optional: true }) ?? {};
   const updatedAt = new Date().toISOString();
   const { notifications, nextState } = decideDelivery({
     result,

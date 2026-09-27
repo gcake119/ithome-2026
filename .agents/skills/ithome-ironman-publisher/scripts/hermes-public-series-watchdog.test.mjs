@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 
 import { describe, expect, test } from 'vitest';
 
-import { decideDelivery, evaluatePublicSeries, fetchLatestSeriesPage, fetchWithRetry, publicationReminder, readScheduledMetadata } from './hermes-public-series-watchdog.mjs';
+import { decideDelivery, evaluatePublicSeries, fetchLatestSeriesPage, fetchWithRetry, isDayVerified, publicationReminder, readScheduledMetadata } from './hermes-public-series-watchdog.mjs';
 
 const execFileAsync = promisify(execFile);
 const watchdogPath = fileURLToPath(new URL('./hermes-public-series-watchdog.mjs', import.meta.url));
@@ -68,6 +68,49 @@ describe('Hermes public series watchdog', () => {
     });
 
     expect(second.notifications).toEqual([]);
+  });
+
+  test('keeps the live checkpoint silent until the article is verified', () => {
+    const pending = decideDelivery({
+      result: {
+        status: 'failed',
+        notifications: [{ kind: 'public_article_missing', day: expected.day, date: expected.date }],
+      },
+      state: {},
+      date: expected.date,
+      day: expected.day,
+      mode: 'check',
+      checkpoint: 'public-live',
+      updatedAt: '2026-09-12T01:01:00.000Z',
+    });
+
+    expect(pending.notifications).toEqual([]);
+
+    const verified = decideDelivery({
+      result: { status: 'verified', notifications: [], articleUrl: expected.articleUrl },
+      state: pending.nextState,
+      date: expected.date,
+      day: expected.day,
+      mode: 'check',
+      checkpoint: 'public-live',
+      updatedAt: '2026-09-12T01:02:00.000Z',
+    });
+
+    expect(verified.notifications).toEqual([{
+      kind: 'public_article_verified',
+      day: expected.day,
+      date: expected.date,
+      articleUrl: expected.articleUrl,
+    }]);
+  });
+
+  test('stops live polling after the same Day was verified', () => {
+    expect(isDayVerified({
+      lastVerified: { date: expected.date, day: expected.day, status: 'verified' },
+    }, expected.date, expected.day)).toBe(true);
+    expect(isDayVerified({
+      lastVerified: { date: expected.date, day: expected.day - 1, status: 'verified' },
+    }, expected.date, expected.day)).toBe(false);
   });
 
   test('runs from outside the repository while resolving repository assets', async () => {
