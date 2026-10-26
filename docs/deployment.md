@@ -39,3 +39,11 @@ pnpm verify:public
 - 首頁、Day 文章、RSS、Sitemap 與品牌圖片可讀。
 
 GitHub Pages 不需要也不應取得 iThome cookie、Chrome profile 或登入 session。若只需要個人網站，到這裡即可；需要 iThome 自動發布時再看 [publisher 指南](publisher.md)。
+
+## Mint 建置 runner
+
+可信任的 `gcake119/ithome-2026` main／同 repo PR／手動建置使用 `mint-ithome-2026`；外部 fork PR 仍用 GitHub-hosted。checkout 不保留憑證，Mint 僅取得 contents:read／pages:read，沒有 Pages 寫入或 OIDC 權限。
+
+`prepare-mint.sh` 驗證專屬 ci-runner、rootless Docker 與備份不可存取，再設定共用 Node toolcache／每 job pnpm store。`build.sh` 在 heavy 前景名額內執行 frozen install（忽略 dependency lifecycle scripts）、原30天 payload驗證、既有test/check/build/public驗證；名額最多等5分鐘，執行最多15分鐘，job最多25分鐘。與其他使用 ci-resource-slot 的重型命令互斥；未宣稱其他未接入此工具的CI已受heavy限制。既有全部runner合計CPU300%、RAM16/20GiB、Tasks4096與跨repo Docker鎖仍有效。本repo沒有Docker image，不新增image publisher。
+
+GitHub Pages deploy 保持 ubuntu-24.04，只有main非PR且未選build_only時可執行，沿用github-pages環境與原排程。PR只建置上傳artifact；在分支手動執行並選build_only也不發布。iThome browser publisher、Cookie、Hermes、Telegram與本機自動化未移到Mint、未啟用。

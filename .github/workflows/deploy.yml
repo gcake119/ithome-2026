@@ -3,45 +3,60 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      build_only:
+        description: Validate and upload artifact without Pages deployment
+        type: boolean
+        default: false
   schedule:
     - cron: '15 0 * * *'
       timezone: 'Asia/Taipei'
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ github.repository == 'gcake119/ithome-2026' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","repo-ithome-2026"]') || 'ubuntu-24.04' }}
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      pages: read
+    env:
+      ASTRO_TELEMETRY_DISABLED: '1'
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Prepare isolated tools and verify Mint controls
+        run: bash scripts/ci/prepare-mint.sh
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
           version: 11.24.0
+          dest: ${{ runner.temp }}/ithome-pnpm-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: pnpm
-      - name: Install dependencies
-        run: pnpm install
-      - name: Verify iThome publishing payloads
+      - name: Validate all publishing payloads, tests, types and static build
         run: |
-          for day in $(seq 1 30); do
-            pnpm ithome:prepare -- --day "$day" --json > /dev/null
-          done
-      - name: Build Astro site
-        run: pnpm build
+          if [[ "$RUNNER_ENVIRONMENT" == self-hosted ]]; then
+            ci-resource-slot --timeout 300 -- timeout 15m bash scripts/ci/build.sh
+          else
+            timeout 15m bash scripts/ci/build.sh
+          fi
       - name: Configure Pages
+        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v6
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
@@ -49,6 +64,10 @@ jobs:
           path: ./dist
 
   deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && inputs.build_only != true
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
