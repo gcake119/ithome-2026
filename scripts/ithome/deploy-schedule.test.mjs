@@ -30,3 +30,36 @@ describe('GitHub Pages deployment schedule', () => {
     expect(workflow).toContain('uses: actions/deploy-pages@v5');
   });
 });
+
+it('provisions a complete Node toolchain before pnpm bootstrap on Mint', async () => {
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join, dirname } = await import('node:path');
+  const { spawnSync } = await import('node:child_process');
+  const directory = mkdtempSync(join(tmpdir(), 'ithome-npm-bootstrap-'));
+  try {
+    // The runner's bundled npm lacks this module, matching the real failed job.
+    writeFileSync(join(directory, 'npm'), `#!${process.execPath}\nrequire('../lib/cli.js');\n`, { mode: 0o755 });
+    let toolPath = `${directory}:${process.env.PATH}`;
+    const npm = () => spawnSync('npm', ['--version'], { encoding: 'utf8', timeout: 10000, env: { ...process.env, PATH: toolPath } });
+    expect(npm().status).not.toBe(0);
+    const workflow = await readFile('.github/workflows/deploy.yml', 'utf8');
+    const build = workflow.split('\n  build:\n')[1].split('\n  deploy:\n')[0];
+    let bootstrapped = false;
+    for (const step of build.split(/(?=^      - )/m)) {
+      if (step.includes('uses: actions/setup-node@')) {
+        expect(step).toContain('node-version: 24');
+        if (!bootstrapped) expect(step).not.toMatch(/cache:\s+pnpm/);
+        toolPath = `${dirname(process.execPath)}:${toolPath}`;
+      }
+      if (step.includes('uses: pnpm/action-setup@')) {
+        const result = npm();
+        expect(result.status, result.stderr).toBe(0);
+        expect(result.stdout).toMatch(/^\d+\.\d+\.\d+\s*$/);
+        expect(step).toContain('cache: true');
+        bootstrapped = true;
+      }
+    }
+    expect(bootstrapped).toBe(true);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
