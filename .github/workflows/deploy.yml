@@ -25,7 +25,7 @@ concurrency:
 jobs:
   build:
     runs-on: ${{ github.repository == 'gcake119/ithome-2026' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","repo-ithome-2026"]') || 'ubuntu-24.04' }}
-    timeout-minutes: 25
+    timeout-minutes: ${{ github.repository == 'gcake119/ithome-2026' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && 275 || 25 }}
     permissions:
       contents: read
       pages: read
@@ -52,7 +52,7 @@ jobs:
       - name: Validate all publishing payloads, tests, types and static build
         run: |
           if [[ "$RUNNER_ENVIRONMENT" == self-hosted ]]; then
-            ci-resource-slot --timeout 300 -- timeout 15m bash scripts/ci/build.sh
+            ci-resource-slot --timeout 14400 --job-wait-budget 14400 -- timeout 15m bash scripts/ci/build.sh
           else
             timeout 15m bash scripts/ci/build.sh
           fi

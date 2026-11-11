@@ -66,3 +66,13 @@ it('provisions a complete Node toolchain before pnpm bootstrap on Mint', async (
     expect(bootstrapped).toBe(true);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
+
+it('reserves queue plus original runtime and cleanup without extending the build command', async () => {
+  const workflow = await readFile('.github/workflows/deploy.yml', 'utf8');
+  const build = workflow.split('\n  build:\n')[1].split('\n  deploy:\n')[0];
+  const [, extended, original] = build.match(/timeout-minutes: \$\{\{.* && (\d+) \|\| (\d+) \}\}/);
+  const budget = Number(build.match(/--job-wait-budget (\d+)/)[1]);
+  expect(Number(extended)).toBeGreaterThanOrEqual(budget / 60 + Number(original) + 10);
+  expect(Number(extended)).toBeLessThanOrEqual(360);
+  expect(build).toContain('-- timeout 15m bash scripts/ci/build.sh');
+});
