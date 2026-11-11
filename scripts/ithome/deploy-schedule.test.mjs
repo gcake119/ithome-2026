@@ -9,7 +9,7 @@ describe('GitHub Pages deployment schedule', () => {
     expect(workflow).toContain("timezone: 'Asia/Taipei'");
   });
 
-  it('routes trusted builds to Mint and keeps fork builds and deployment on pinned Ubuntu', async () => {
+  it('routes trusted builds and deployment to Mint while preserving fork isolation', async () => {
     const workflow = await readFile('.github/workflows/deploy.yml', 'utf8');
 
     const build = workflow.split('\n  build:\n')[1].split('\n  deploy:\n')[0];
@@ -19,7 +19,7 @@ describe('GitHub Pages deployment schedule', () => {
     expect(build).toContain(`fromJSON('["self-hosted","Linux","X64","repo-ithome-2026"]') || 'ubuntu-24.04'`);
     expect(build).not.toContain('pages: write');
     expect(build).not.toContain('id-token: write');
-    expect(deploy).toContain('runs-on: ubuntu-24.04');
+    expect(deploy).toContain('runs-on: [self-hosted, Linux, X64, repo-ithome-2026]');
     expect(deploy).toContain("github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && inputs.build_only != true");
     expect(deploy).toContain('pages: write');
     expect(deploy).toContain('id-token: write');

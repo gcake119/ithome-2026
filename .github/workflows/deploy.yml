@@ -71,7 +71,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, repo-ithome-2026]
     needs: build
     steps:
       - name: Deploy to GitHub Pages
