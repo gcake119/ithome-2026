@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ${{ github.repository == 'gcake119/ithome-2026' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","repo-ithome-2026"]') || 'ubuntu-24.04' }}
+    runs-on: ["self-hosted", "Linux", "X64", "repo-ithome-2026"]
     timeout-minutes: ${{ github.repository == 'gcake119/ithome-2026' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && 275 || 25 }}
     permissions:
       contents: read
@@ -32,24 +32,39 @@ jobs:
     env:
       ASTRO_TELEMETRY_DISABLED: '1'
     steps:
+      - name: Require trusted source before self-hosted execution
+        id: ci_source_admission
+        shell: bash --noprofile --norc -e -o pipefail {0}
+        env:
+          CI_SOURCE_TRUSTED: ${{ github.repository == 'gcake119/ithome-2026' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        run: |
+          [[ "${CI_SOURCE_TRUSTED:-}" == true ]] || {
+            echo 'CI_SOURCE_REQUIRES_ISOLATED_SELF_HOSTED_RUNNER' >&2
+            exit 1
+          }
       - name: Checkout
+        if: ${{ steps.ci_source_admission.outcome == 'success' }}
         uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Prepare isolated tools and verify Mint controls
+        if: ${{ steps.ci_source_admission.outcome == 'success' }}
         run: bash scripts/ci/prepare-mint.sh
       - name: Setup Node
+        if: ${{ steps.ci_source_admission.outcome == 'success' }}
         uses: actions/setup-node@v5
         with:
           node-version: 24
           package-manager-cache: false
       - name: Setup pnpm
+        if: ${{ steps.ci_source_admission.outcome == 'success' }}
         uses: pnpm/action-setup@v6
         with:
           version: 11.24.0
           dest: ${{ runner.temp }}/ithome-pnpm-${{ github.run_id }}-${{ github.run_attempt }}
           cache: true
       - name: Validate all publishing payloads, tests, types and static build
+        if: ${{ steps.ci_source_admission.outcome == 'success' }}
         run: |
           if [[ "$RUNNER_ENVIRONMENT" == self-hosted ]]; then
             ci-resource-slot --timeout 14400 --job-wait-budget 14400 -- timeout 15m bash scripts/ci/build.sh
@@ -57,9 +72,10 @@ jobs:
             timeout 15m bash scripts/ci/build.sh
           fi
       - name: Configure Pages
-        if: github.event_name != 'pull_request'
+        if: ${{ steps.ci_source_admission.outcome == 'success' && (github.event_name != 'pull_request') }}
         uses: actions/configure-pages@v6
       - name: Upload Pages artifact
+        if: ${{ steps.ci_source_admission.outcome == 'success' }}
         uses: actions/upload-pages-artifact@v5
         with:
           path: ./dist
@@ -72,7 +88,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: [self-hosted, Linux, X64, repo-ithome-2026]
+    runs-on: ubuntu-24.04
     needs: build
     steps:
       - name: Deploy to GitHub Pages
