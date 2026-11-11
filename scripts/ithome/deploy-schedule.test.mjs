@@ -49,7 +49,10 @@ it('provisions a complete Node toolchain before pnpm bootstrap on Mint', async (
     for (const step of build.split(/(?=^      - )/m)) {
       if (step.includes('uses: actions/setup-node@')) {
         expect(step).toContain('node-version: 24');
-        if (!bootstrapped) expect(step).not.toMatch(/cache:\s+pnpm/);
+        if (!bootstrapped) {
+          expect(step).not.toMatch(/cache:\s+pnpm/);
+          expect(step).toContain('package-manager-cache: false');
+        }
         toolPath = `${dirname(process.execPath)}:${toolPath}`;
       }
       if (step.includes('uses: pnpm/action-setup@')) {
