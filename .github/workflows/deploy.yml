@@ -38,16 +38,17 @@ jobs:
           persist-credentials: false
       - name: Prepare isolated tools and verify Mint controls
         run: bash scripts/ci/prepare-mint.sh
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          package-manager-cache: false
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
           version: 11.24.0
           dest: ${{ runner.temp }}/ithome-pnpm-${{ github.run_id }}-${{ github.run_attempt }}
-      - name: Setup Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
+          cache: true
       - name: Validate all publishing payloads, tests, types and static build
         run: |
           if [[ "$RUNNER_ENVIRONMENT" == self-hosted ]]; then
@@ -71,7 +72,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, repo-ithome-2026]
     needs: build
     steps:
       - name: Deploy to GitHub Pages
