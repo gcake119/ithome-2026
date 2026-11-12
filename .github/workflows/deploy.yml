@@ -81,7 +81,7 @@ jobs:
           path: ./dist
 
   deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && inputs.build_only != true
+    if: ${{ (github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && inputs.build_only != true) && vars.ENABLE_PAGES_PUBLICATION == 'true' }}
     permissions:
       pages: write
       id-token: write
