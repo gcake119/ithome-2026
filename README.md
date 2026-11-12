@@ -154,3 +154,7 @@ Fork 會保留模板目前的正式設定與文章，不會自動清空。務必
 - **dry-run**：只驗證流程，不進行正式寫入或發布。
 
 更完整的維護資料請看 [產品定位](PRODUCT.md)、[安全規則](SECURITY.md)、[貢獻指南](CONTRIBUTING.md) 與 [交接文件](docs/handoff/README.md)。
+
+## Pages 發布暫停開關
+
+Pages 部署另須 repository variable `ENABLE_PAGES_PUBLICATION` 明確為 `true`，原本部署條件與 build 依賴仍保留。此次 CI 遷移將此開關設為 `false`；不自行恢復。未設定或非 `true` 時仍執行原有 build／驗證，但不部署。Linux build／test 使用自架 runner，Pages 部署維持 GitHub-hosted 例外。可用 `node --test scripts/check-publication-hold.test.mjs` 核對發布條件，不會執行部署。
